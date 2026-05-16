@@ -14,14 +14,14 @@ pub struct Database {
 
 impl Database {
     pub fn open(db_file: PathBuf, migrations: Vec<Migration>) -> anyhow::Result<Database> {
-        let conn = Connection::open_with_flags(
+        let mut conn = Connection::open_with_flags(
             db_file,
             OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_READ_WRITE,
         )
         .context("Connection to database failed!")?;
 
         conn.execute(
-            // language=SQL
+            // language=sqlite
             "
             CREATE TABLE IF NOT EXISTS migrations (
               version INTEGER PRIMARY KEY
@@ -38,7 +38,7 @@ impl Database {
                 continue;
             }
 
-            migration.execute(&conn)?;
+            migration.execute(&mut conn)?
         }
 
         Ok(Database {

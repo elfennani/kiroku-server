@@ -1,0 +1,24 @@
+query OngoingQuery($userId: Int!){
+    MediaListCollection(userId: $userId,status_in: [CURRENT,REPEATING], type: ANIME){
+        lists {
+            name
+            entries {
+                id
+                status
+                media {
+                    id
+                    title {
+                        userPreferred
+                    }
+                    episodes
+                    bannerImage
+                    coverImage {
+                        large
+                        extraLarge
+                    }
+                }
+                progress
+            }
+        }
+    }
+}

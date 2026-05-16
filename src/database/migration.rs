@@ -18,17 +18,23 @@ impl Migration {
         })
     }
 
-    pub fn execute(&self, connection: &Connection) -> anyhow::Result<()> {
-        connection
-            .execute(self.query.as_str(), ())
-            .context(format!(
-                "Failed to execute migration v{} for query: \"{}\"",
-                self.version,
-                self.query.trim()
-            ))?;
+    pub fn execute(&self, connection: &mut Connection) -> anyhow::Result<()> {
+        let tx = connection.transaction()?;
+        tx.execute(self.query.as_str(), ()).context(format!(
+            "Failed to execute migration v{} for query: \"{}\"",
+            self.version,
+            self.query.trim()
+        ))?;
 
-        let mut stmt = connection.prepare("INSERT INTO migrations (version) VALUES (?)")?;
-        stmt.execute(params![self.version])?;
+        {
+            let mut stmt = tx.prepare("INSERT INTO migrations (version) VALUES (?)")?;
+            stmt.execute(params![self.version])?;
+        }
+
+        tx.commit().context(format!(
+            "Failed to commit migration version {}",
+            self.version
+        ))?;
 
         Ok(())
     }
