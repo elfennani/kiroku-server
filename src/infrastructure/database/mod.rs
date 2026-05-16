@@ -1,15 +1,15 @@
 pub mod migration;
 pub mod table;
 
-use crate::database::migration::Migration;
-use crate::database::table::Session;
+use crate::infrastructure::database::migration::Migration;
+use crate::infrastructure::database::table::Session;
 use anyhow::Context;
 use rusqlite::{params, Connection, OpenFlags, Result};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 pub struct Database {
-    connection: Arc<Mutex<Connection>>,
+    pub connection: Arc<Mutex<Connection>>,
 }
 
 impl Database {
@@ -55,42 +55,6 @@ impl Database {
             Ok(0)
         } else {
             version.context("Failed to get version from database")
-        }
-    }
-
-    pub fn save_session(&self, access_token: &str) -> anyhow::Result<()> {
-        self.connection
-            .lock()
-            .unwrap()
-            .execute(
-                // language=sqlite
-                "INSERT OR REPLACE INTO sessions (id, token) VALUES (1, ?)",
-                params![access_token],
-            )
-            .context("Failed to insert session row")?;
-
-        Ok(())
-    }
-
-    pub fn get_session(&self) -> anyhow::Result<Option<Session>> {
-        let conn = self.connection.lock().unwrap();
-        let mut stmt = conn.prepare(
-            // language=sqlite
-            "SELECT id,token FROM sessions",
-        )?;
-        let result = stmt.query_one((), |row| {
-            Ok(Session {
-                id: row.get(0)?,
-                access_token: row.get(1)?,
-            })
-        });
-
-        if let Err(rusqlite::Error::QueryReturnedNoRows) = result {
-            Ok(None)
-        } else {
-            result
-                .context("Failed to get session from database")
-                .map(Some)
         }
     }
 }

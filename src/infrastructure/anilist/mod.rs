@@ -1,7 +1,8 @@
-use std::fmt::Display;
-use crate::anilist::ongoing_query::MediaListStatus;
+use crate::domain::models;
+use crate::infrastructure::anilist::ongoing_query::MediaListStatus;
 use graphql_client::GraphQLQuery;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -18,7 +19,7 @@ pub struct ViewerQuery;
 #[derive(GraphQLQuery)]
 #[graphql(
     schema_path = "schemes/anilist/schema.json",
-    query_path = "schemes/anilist/queries/ongoing_query.graphql",
+    query_path = "schemes/anilist/queries/ongoing.graphql",
     response_derives = "Debug"
 )]
 pub struct OngoingQuery;
@@ -51,5 +52,19 @@ impl Display for MediaListStatus {
             MediaListStatus::Other(_) => "OTHER".to_string(),
         };
         write!(f, "{}", str)
+    }
+}
+
+impl From<MediaListStatus> for models::Status {
+    fn from(value: MediaListStatus) -> Self {
+        match value {
+            MediaListStatus::CURRENT => Self::Current,
+            MediaListStatus::PLANNING => Self::Planned,
+            MediaListStatus::COMPLETED => Self::Completed,
+            MediaListStatus::DROPPED => Self::Dropped,
+            MediaListStatus::PAUSED => Self::Paused,
+            MediaListStatus::REPEATING => Self::Revisiting,
+            MediaListStatus::Other(val) => Self::Unknown(val),
+        }
     }
 }
