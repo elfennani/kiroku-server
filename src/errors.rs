@@ -6,6 +6,9 @@ pub enum AppError {
     BadRequest(String),
     NotFound(String),
     InternalServer(String),
+
+    TranscodeError(String), // Transcoder (ffmpeg) error
+    PackagerError(String), // Shaka packager specific errors
 }
 
 impl From<rusqlite::Error> for AppError {
@@ -27,6 +30,8 @@ impl From<AppError> for StatusCode {
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
             AppError::InternalServer(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::JsonParseError(_) => StatusCode::BAD_REQUEST,
+            AppError::TranscodeError(_) => StatusCode::BAD_REQUEST,
+            AppError::PackagerError(_) => StatusCode::BAD_REQUEST,
         }
     }
 }

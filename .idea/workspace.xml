@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AutoImportSettings">
-    <option name="autoReloadType" value="ALL" />
+    <option name="autoReloadType" value="NONE" />
   </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
@@ -11,20 +11,22 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Reorganized the project structure.">
-      <change afterPath="$PROJECT_DIR$/src/infrastructure/packager/metadata.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/packager.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/errors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/errors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/packager/metadata.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/packager/metadata.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/packager.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/packager.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
   <component name="FileTemplateManagerImpl">
@@ -72,11 +74,17 @@
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/elfennani/RustroverProjects/kiroku-server&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -146,6 +154,7 @@
       <workItem from="1778947883656" duration="41000" />
       <workItem from="1778947936307" duration="6152000" />
       <workItem from="1778954123034" duration="18077000" />
+      <workItem from="1779139475582" duration="5675000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -171,7 +180,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778955351875</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging.">
+      <option name="closed" value="true" />
+      <created>1779113375075</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1779113375075</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -181,7 +198,8 @@
     <MESSAGE value="First commit" />
     <MESSAGE value="Added `/profile` route to display user account info and currently playing media." />
     <MESSAGE value="Reorganized the project structure." />
-    <option name="LAST_COMMIT_MESSAGE" value="Reorganized the project structure." />
+    <MESSAGE value="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

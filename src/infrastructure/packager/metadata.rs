@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MediaMetadata {
     /// Title in `tags.title`, fallback to filename (without the extension)
     pub title: String,
@@ -16,23 +16,22 @@ pub struct MediaMetadata {
     pub subtitles: Vec<SubtitleStream>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Chapter {
-    pub id: u64,
     pub index: usize,
     pub start: u64,
     pub end: u64,
     pub title: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AudioStream {
     pub index: usize,
     pub title: String,
     pub language: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SubtitleStream {
     pub index: usize,
     pub title: String,
@@ -72,7 +71,6 @@ impl MediaMetadata {
 
         for chapter in data.chapters {
             chapters.push(Chapter {
-                id: chapter.id,
                 index: chapters.len(),
                 start: chapter.start,
                 end: chapter.end,
@@ -103,6 +101,7 @@ impl MediaMetadata {
                 .unwrap_or(filename),
             duration: (f32::from_str(data.format.duration.as_str())
                 .map_err(|_err| AppError::InternalServer("Failed to parse duration".to_owned()))?
+                * 1000f32
                 * 1000f32)
                 .round() as u64,
             chapters,
@@ -128,7 +127,6 @@ struct FfprobeStream {
 
 #[derive(Deserialize)]
 struct FfprobeChapter {
-    id: u64,
     start: u64,
     end: u64,
     tags: HashMap<String, String>,

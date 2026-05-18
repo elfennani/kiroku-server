@@ -1,33 +1,53 @@
 pub mod metadata;
 
 use crate::errors::AppError;
-use crate::infrastructure::packager::metadata::MediaMetadata;
+use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
 use crate::prelude::*;
-use std::fmt::format;
-use std::fs::Metadata;
+use log::{debug, info};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
+use std::sync::OnceLock;
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 pub struct Packager {
     file: PathBuf,
+    output_dir: PathBuf,
+    streams: HashSet<String>,
+    metadata: OnceLock<MediaMetadata>,
 }
 
 impl Packager {
-    pub fn new(path: impl AsRef<Path>) -> Result<Self> {
-        let path = path.as_ref();
-        if !path.exists() {
+    pub async fn new(input: impl AsRef<Path>, output_dir: impl AsRef<Path>) -> Result<Self> {
+        let input = input.as_ref();
+        let output_dir = output_dir.as_ref();
+
+        if !input.exists() {
             return Err(AppError::NotFound(format!(
                 "File not found: {}",
-                path.display()
+                input.display()
             )));
         }
 
+        if !output_dir.exists() {
+            std::fs::create_dir_all(output_dir)
+                .map_err(|err| AppError::InternalServer(err.to_string()))?;
+        }
+
         Ok(Self {
-            file: <Path as AsRef<Path>>::as_ref(path).to_path_buf(),
+            file: input.to_owned(),
+            output_dir: output_dir.to_owned(),
+            streams: HashSet::new(),
+            metadata: OnceLock::new(),
         })
     }
 
     pub async fn get_metadata(&self) -> Result<MediaMetadata> {
+        if let Some(metadata) = self.metadata.get() {
+            return Ok(metadata.clone());
+        }
+
         // ffprobe -v quiet -print_format json -show_format -show_streams -show_chapters input.mp4
         let output = Command::new("ffprobe")
             .args(&[
@@ -45,122 +65,165 @@ impl Packager {
             .map_err(|err| AppError::InternalServer(format!("ffprobe error: {}", err)))?;
 
         let data = String::from_utf8_lossy(&output.stdout);
+        let metadata = MediaMetadata::from_serde_value(serde_json::from_str(&data)?)?;
 
-        Ok(MediaMetadata::from_serde_value(serde_json::from_str(
-            &data,
-        )?)?)
+        self.metadata.set(metadata.clone()).ok();
+
+        Ok(metadata)
     }
 
-    pub async fn encode(&self, metadata: &MediaMetadata, dir: impl AsRef<Path>) -> Result<()> {
-        let dir = dir.as_ref().to_path_buf();
-        let resolutions = [720, 1080];
+    pub async fn transcode_video(&mut self, resolution: usize) -> Result<PathBuf> {
+        let output_file = self.output_dir.join(format!("video_{}p.mp4", resolution));
+        let metadata = self.get_metadata().await?;
 
-        // Encode Video Resolutions
-        for resolution in resolutions {
-            // WARNING: `h264_videotoolbox` is an encoder that uses Apple Silicon hardware encoder,
-            //          meaning it would not function in other platforms, so change to `libx264` it
-            //          if someone wants to use this project.
+        // WARNING: `h264_videotoolbox` is an encoder that uses Apple Silicon hardware encoder/decoder,
+        //          meaning it would not function in other platforms, so change to `libx264` it
+        //          if someone wants to use this project.
 
-            // ffmpeg -i input.mkv -an -sn -vf "scale=-2:720" -c:v h264_videotoolbox video_720p.mp4
+        // ffmpeg -i input.mkv -an -sn -vf "scale=-2:720" -c:v h264_videotoolbox video_720p.mp4
+        let handle = Command::new("ffmpeg")
+            .args([
+                "-hide_banner",
+                "-v",
+                "error",
+                "-progress",
+                "pipe:1",
+                "-nostats",
+                "-y", // to overwrite if exists
+                "-i",
+                self.file.to_str().unwrap(),
+                "-an",
+                "-sn",
+                "-vf",
+                format!("scale=-2:{}", resolution).as_str(),
+                "-c:v",
+                "h264_videotoolbox",
+                output_file.to_str().unwrap(),
+            ])
+            .stdout(Stdio::piped())
+            .spawn();
 
-            println!("Encoding video in {}p", resolution);
-            let output = Command::new("ffmpeg")
-                .args([
-                    "-i",
-                    self.file.to_str().unwrap(),
-                    "-an",
-                    "-sn",
-                    "-vf",
-                    format!("scale=-2:{}", resolution).as_str(),
-                    "-c:v",
-                    "h264_videotoolbox",
-                    dir.join(format!("video_{}p.mp4", resolution))
-                        .to_str()
-                        .unwrap(),
-                ])
-                .output()
-                .await;
+        if let Err(err) = handle {
+            eprintln!("Failed to transcode: {}", err);
+            return Err(AppError::TranscodeError(err.to_string()));
+        }
 
-            if let Err(err) = output {
-                eprintln!("ffmpeg error: {}", err);
-                return Err(AppError::InternalServer("ffmpeg error".to_string()));
+        let mut handle = handle.unwrap();
+
+        // https://rust-lang-nursery.github.io/rust-cookbook/os/external.html#continuously-process-child-process-outputs
+        let stdout = handle.stdout.take().unwrap();
+        let reader = BufReader::new(stdout);
+
+        let mut lines = reader.lines();
+
+        while let Ok(Some(line)) = lines.next_line().await {
+            if line.starts_with("out_time_ms") {
+                let progress_ms = line.split("=").collect::<Vec<&str>>()[1]
+                    .parse::<u64>()
+                    .unwrap();
+                let percentage = progress_ms as f64 / metadata.duration as f64;
+                info!("{}p transcode progress: {:.2}%", resolution, percentage * 100.0);
             }
         }
 
-        // Encode audio streams
-        for audio in metadata.audio.iter() {
-            // Note: Shaka packager doesn't accept `aac` or `mp3`, but for some reason
-            //       it take `mp4` as a container for audio.
-            // ffmpeg -i input.mkv -map 0:a:0 audio_eng.mp4
-            println!(
-                "Encoding audio stream #{} ({})",
-                audio.index,
-                audio.language.clone().unwrap_or("NO_LANG".to_string())
-            );
-            let output = Command::new("ffmpeg")
-                .args([
-                    "-i",
-                    self.file.to_str().unwrap(),
-                    "-map", // -map automatically disables automatic stream selection so no need to exclude video and subs streams (with `-vn` and `-sn`)
-                    format!("0:a:{}", audio.index).as_str(), // Audio stream selection.
-                    dir.join(format!(
-                        "audio_{}.mp4",
-                        audio.language.clone().unwrap_or(audio.index.to_string())
-                    ))
-                    .to_str()
-                    .unwrap(),
-                ])
-                .output()
-                .await;
+        handle.wait_with_output().await.ok();
 
-            if let Err(err) = output {
-                eprintln!("ffmpeg error: {}", err);
-                return Err(AppError::InternalServer(
-                    "ffmpeg (audio encoding) error".to_string(),
-                ));
-            }
-        }
+        self.streams.insert(format!("in=video_{res}p.mp4,stream=video,segment_template=h264_{res}p/$Number$.ts,playlist_name=h264_{res}p/main.m3u8,iframe_playlist_name=h264_{res}p/iframe.m3u8", res = resolution));
 
-        // Extract subtitle tracks
-        for subtitle in metadata.subtitles.iter() {
-            // ffmpeg -i input.mkv -map 0:s:0 subtitles.vtt
-            println!(
-                "Extracting subtitle stream #{} ({})",
-                subtitle.index,
-                subtitle.language.clone().unwrap_or("NO_LANG".to_string())
-            );
-            let output = Command::new("ffmpeg")
-                .args([
-                    "-i",
-                    self.file.to_str().unwrap(),
-                    "-map",
-                    format!("0:s:{}", subtitle.index).as_str(),
-                    dir.join(format!(
-                        "subtitles_{}.vtt",
-                        subtitle
-                            .language
-                            .clone()
-                            .unwrap_or(subtitle.index.to_string())
-                    ))
-                    .to_str()
-                    .unwrap(),
-                ])
-                .output()
-                .await;
-
-            if let Err(err) = output {
-                eprintln!("ffmpeg error: {}", err);
-                return Err(AppError::InternalServer(
-                    "ffmpeg (subtitle extracting) error".to_string(),
-                ));
-            }
-        }
-
-        Ok(())
+        Ok(output_file)
     }
-    pub async fn package(&self, metadata: &MediaMetadata, dir: impl AsRef<Path>) -> Result<()> {
-        let dir = dir.as_ref().to_path_buf();
-        // IMPORTANT: Both ffmpeg and Shaka packager need to be installed. Shaka installs by
+    pub async fn transcode_audio(&mut self, audio: AudioStream) -> Result<PathBuf> {
+        let output_file = self.output_dir.join(format!(
+            "audio_{}.mp4",
+            audio.language.clone().unwrap_or(audio.index.to_string())
+        ));
+
+        // Note: Shaka packager doesn't accept `aac` or `mp3`, but for some reason
+        //       it take `mp4` as a container for audio.
+        // ffmpeg -i input.mkv -map 0:a:0 audio_eng.mp4
+        let output = Command::new("ffmpeg")
+            .args([
+                "-y",
+                "-i",
+                self.file.to_str().unwrap(),
+                "-map", // -map automatically disables automatic stream selection so no need to exclude video and subs streams (with `-vn` and `-sn`)
+                format!("0:a:{}", audio.index).as_str(), // Audio stream selection.
+                output_file.to_str().unwrap(),
+            ])
+            .output()
+            .await;
+
+        if let Err(err) = output {
+            eprintln!("ffmpeg error: {}", err);
+            return Err(AppError::TranscodeError(err.to_string()));
+        }
+
+        let suffix = audio.language.clone().unwrap_or(audio.index.to_string());
+        let name = audio
+            .language
+            .clone()
+            .unwrap_or(format!("Track {}", audio.index + 1));
+        self.streams.insert(
+            format!(
+                "in=audio_{suffix}.mp4,stream=audio,segment_template=audio_{suffix}/$Number$.aac,playlist_name=audio_{suffix}/main.m3u8,hls_group_id=audio,hls_name={name}", suffix = suffix, name = name
+            )
+        );
+
+        Ok(output_file)
+    }
+    pub async fn extract_subtitles(&mut self, subtitle_stream: SubtitleStream) -> Result<PathBuf> {
+        let output_file = self.output_dir.join(format!(
+            "subtitles_{}.vtt",
+            subtitle_stream
+                .language
+                .clone()
+                .unwrap_or(subtitle_stream.index.to_string())
+        ));
+
+        // ffmpeg -i input.mkv -map 0:s:0 subtitles.vtt
+        println!(
+            "Extracting subtitle stream #{} ({})",
+            subtitle_stream.index,
+            subtitle_stream
+                .language
+                .clone()
+                .unwrap_or("NO_LANG".to_string())
+        );
+        let output = Command::new("ffmpeg")
+            .args([
+                "-i",
+                self.file.to_str().unwrap(),
+                "-map",
+                format!("0:s:{}", subtitle_stream.index).as_str(),
+                output_file.to_str().unwrap(),
+            ])
+            .output()
+            .await;
+
+        if let Err(err) = output {
+            eprintln!("ffmpeg error: {}", err);
+            return Err(AppError::TranscodeError(err.to_string()));
+        }
+
+        let suffix = subtitle_stream
+            .language
+            .clone()
+            .unwrap_or(subtitle_stream.index.to_string());
+        let name = subtitle_stream
+            .language
+            .clone()
+            .unwrap_or(format!("Track {}", subtitle_stream.index + 1));
+        self.streams.insert(format!("in=subtitles_{suffix}.vtt,stream=text,segment_template=text_{suffix}/$Number$.vtt,playlist_name=text_{suffix}/main.m3u8,hls_group_id=text,hls_name={name}", suffix = suffix, name = name));
+
+        Ok(output_file)
+    }
+
+    /// Packages the encoded files for HLS Streaming using Google's Shaka packager
+    ///
+    /// Note: This function takes ownership of the instance, so create a new instance
+    ///       to process other videos.
+    pub async fn package(self) -> Result<PathBuf> {
+        // IMPORTANT: Both ffmpeg and Google's Shaka packager need to be installed. Shaka installs by
         //            default as `packager`, I have renamed it in my system to `shaka`
         //            solely to distinguish it
 
@@ -172,34 +235,9 @@ impl Packager {
         //   'in=video_720p.mp4,stream=video,segment_template=h264_720p/$Number$.ts,playlist_name=h264_720p/main.m3u8,iframe_playlist_name=h264_720p/iframe.m3u8' \
         //   --hls_master_playlist_output h264_master.m3u8
 
-        let mut streams: Vec<String> = vec![];
-        let temp_files: Vec<PathBuf> = vec![];
-
-        let resolutions = [720, 1080];
-
-        for res in resolutions {
-            streams.push(format!("in=video_{}p.mp4,stream=video,segment_template=h264_{}p/$Number$.ts,playlist_name=h264_{}p/main.m3u8,iframe_playlist_name=h264_{}p/iframe.m3u8", res, res, res, res))
-        }
-
-        for audio in metadata.audio.iter() {
-            let suffix = audio.language.clone().unwrap_or(audio.index.to_string());
-            streams.push(
-                format!(
-                    "in=audio_{}.mp4,stream=audio,segment_template=audio_{}/$Number$.aac,playlist_name=audio_{}/main.m3u8,hls_group_id=audio,hls_name={}", suffix, suffix, suffix, audio.language.clone().unwrap_or(format!("Track {}", audio.index + 1))
-                )
-            );
-        }
-
-        for subtitle in metadata.subtitles.iter() {
-            let suffix = subtitle
-                .language
-                .clone()
-                .unwrap_or(subtitle.index.to_string());
-            streams.push(format!("in=subtitles_{}.vtt,stream=text,segment_template=text_{}/$Number$.vtt,playlist_name=text_{}/main.m3u8,hls_group_id=text,hls_name={}", suffix, suffix, suffix, subtitle.language.clone().unwrap_or(format!("Track {}", subtitle.index + 1))))
-        }
-
         let mut command = Command::new("shaka");
-        for stream in streams {
+
+        for stream in self.streams {
             command.arg(stream);
         }
 
@@ -207,11 +245,13 @@ impl Packager {
             .arg("--hls_master_playlist_output")
             .arg("h264_master.m3u8");
 
-        let output = command.current_dir(dir).output().await.unwrap();
+        let output = command.current_dir(&self.output_dir).output().await;
 
-        println!("{}", String::from_utf8_lossy(&output.stdout));
-        println!("{}", String::from_utf8_lossy(&output.stderr));
+        if let Err(err) = output {
+            eprintln!("Failed to transcode: {}", err);
+            return Err(AppError::PackagerError(err.to_string()));
+        }
 
-        Ok(())
+        Ok(self.output_dir)
     }
 }
