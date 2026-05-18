@@ -1,2 +1,4 @@
 /target
 app.db
+metadata.json
+/temp
