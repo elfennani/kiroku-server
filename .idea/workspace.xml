@@ -11,14 +11,9 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging.">
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/errors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/errors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/packager/metadata.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/packager/metadata.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/packager.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/packager.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +44,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/elfennani/kiroku-server.git&quot;,
-    &quot;accountId&quot;: &quot;3502288d-dc41-4e11-8ed8-eb0b897f0da3&quot;
+    &quot;accountId&quot;: &quot;f7072695-034e-4c5f-8b5c-12dd4a95c4ab&quot;
   }
 }</component>
   <component name="MacroExpansionManager">
@@ -102,7 +97,7 @@
       <recent name="$PROJECT_DIR$/src/infrastructure" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Cargo.Run">
     <configuration name="Run kiroku-server" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="run --package kiroku-server --bin kiroku-server  -- 41503 eTZA3Vk1c9UrN95g2fl7RrcvsTFthaEJRKw8xnci" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -188,7 +183,23 @@
       <option name="project" value="LOCAL" />
       <updated>1779113375075</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction.">
+      <option name="closed" value="true" />
+      <created>1779145324356</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1779145324356</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction.">
+      <option name="closed" value="true" />
+      <created>1779145336685</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1779145336685</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -199,7 +210,8 @@
     <MESSAGE value="Added `/profile` route to display user account info and currently playing media." />
     <MESSAGE value="Reorganized the project structure." />
     <MESSAGE value="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging." />
+    <MESSAGE value="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

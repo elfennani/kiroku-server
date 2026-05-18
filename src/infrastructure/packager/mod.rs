@@ -3,7 +3,7 @@ pub mod metadata;
 use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
 use crate::prelude::*;
-use log::{debug, info};
+use log::info;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -11,6 +11,18 @@ use std::sync::OnceLock;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
+/// This module takes an input mkv video, then separates all streams using `ffmpeg`, which
+/// then are fed into Google's Shaka packager for the purpose of generating HLS playlist (Similar
+/// to how other streaming platforms do like YouTube, Netflix, etc...
+///
+/// Why? Because I needed a way to share media between three devices, one of them is weak tablet
+/// and cannot handle 1080p playback, and 720p doesn't play smoothly through SMB.
+///
+/// So I decided to make my MacBook a central server since it technically never turns off
+/// even when the lid is closed. And this server simply streams HLS videos through a web interface
+/// yet to be added. I could've avoided all the hassle and streamed MKV instead, but with web
+/// browsers not supporting MKV that means I'd have to connect VLC every single time I want
+/// to watch something. Plus this server has a bonus of updating AniList tracker automatically :)
 pub struct Packager {
     file: PathBuf,
     output_dir: PathBuf,
@@ -50,7 +62,7 @@ impl Packager {
 
         // ffprobe -v quiet -print_format json -show_format -show_streams -show_chapters input.mp4
         let output = Command::new("ffprobe")
-            .args(&[
+            .args([
                 "-v",
                 "quiet",
                 "-print_format",
@@ -122,7 +134,11 @@ impl Packager {
                     .parse::<u64>()
                     .unwrap();
                 let percentage = progress_ms as f64 / metadata.duration as f64;
-                info!("{}p transcode progress: {:.2}%", resolution, percentage * 100.0);
+                info!(
+                    "{}p transcode progress: {:.2}%",
+                    resolution,
+                    percentage * 100.0
+                );
             }
         }
 
@@ -181,16 +197,9 @@ impl Packager {
         ));
 
         // ffmpeg -i input.mkv -map 0:s:0 subtitles.vtt
-        println!(
-            "Extracting subtitle stream #{} ({})",
-            subtitle_stream.index,
-            subtitle_stream
-                .language
-                .clone()
-                .unwrap_or("NO_LANG".to_string())
-        );
         let output = Command::new("ffmpeg")
             .args([
+                "-y",
                 "-i",
                 self.file.to_str().unwrap(),
                 "-map",
