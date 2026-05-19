@@ -92,7 +92,7 @@ async fn main() -> anyhow::Result<()> {
     ];
 
     let db = Arc::new(Database::open(
-        env::current_dir()?.join("app.db"),
+        env::current_dir()?.join("./app.db"),
         migrations,
     )?);
 

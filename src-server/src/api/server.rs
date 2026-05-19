@@ -5,6 +5,7 @@ use crate::infrastructure::packager::service::PackagerService;
 use crate::infrastructure::session::SessionRepositoryImpl;
 use crate::infrastructure::user::UserRepositoryImpl;
 use anyhow::Context;
+use axum::Router;
 use log::info;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use std::sync::Arc;
@@ -44,7 +45,8 @@ impl Server {
     }
 
     pub async fn serve(&self) -> anyhow::Result<()> {
-        let app = create_router(self.state.clone());
+        let app = Router::new().nest("/api", create_router(self.state.clone()));
+
         let listener = tokio::net::TcpListener::bind("0.0.0.0:8642")
             .await
             .context("failed to bind TCP listener")?;
