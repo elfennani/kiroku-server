@@ -16,19 +16,18 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers.">
-      <change afterPath="$PROJECT_DIR$/.prettierrc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/api/processed.query.ts" afterDir="false" />
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Implemented media details view and integrated Prettier for code formatting.&#10;&#10;- Updated `MediaRoute` to fetch and display processed episode metadata, including duration and episode numbering.&#10;- Implemented loading and error UI states using Lucide icons and alert components.&#10;- Added `prettier` as a dev dependency and introduced a `.prettierrc` configuration file.&#10;- Cleaned up `tsconfig` files by removing redundant `baseUrl` properties.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/api/server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/routes/Media.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Media.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/OngoingMedia.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/OngoingMedia.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Profile.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ui/skeleton.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/skeleton.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/routes/Home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Home.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsconfig.app.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.app.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tsconfig.node.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.node.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,7 +106,8 @@
     "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
     "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
     "org.rust.first.attach.projects": "true",
-    "settings.editor.selected.configurable": "settings.javascript.prettier",
+    "prettierjs.PrettierConfiguration.Package": "/Users/elfennani/RustroverProjects/kiroku-server/node_modules/prettier",
+    "settings.editor.selected.configurable": "preferences.sourceCode.HTML",
     "ts.external.directory.path": "/Users/elfennani/RustroverProjects/kiroku-server/node_modules/typescript/lib",
     "vue.rearranger.settings.migration": "true"
   }
@@ -260,7 +260,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779217427092</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Implemented media details view and integrated Prettier for code formatting.&#10;&#10;- Updated `MediaRoute` to fetch and display processed episode metadata, including duration and episode numbering.&#10;- Implemented loading and error UI states using Lucide icons and alert components.&#10;- Added `prettier` as a dev dependency and introduced a `.prettierrc` configuration file.&#10;- Cleaned up `tsconfig` files by removing redundant `baseUrl` properties.">
+      <option name="closed" value="true" />
+      <created>1779221982517</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1779221982517</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -279,6 +287,7 @@
     <MESSAGE value="Implemented mDNS advertising." />
     <MESSAGE value="Reorganized the project structure by moving the Rust backend to a `src-server` directory and prefixing API routes. And initialized a React.js project." />
     <MESSAGE value="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers." />
+    <MESSAGE value="Implemented media details view and integrated Prettier for code formatting.&#10;&#10;- Updated `MediaRoute` to fetch and display processed episode metadata, including duration and episode numbering.&#10;- Implemented loading and error UI states using Lucide icons and alert components.&#10;- Added `prettier` as a dev dependency and introduced a `.prettierrc` configuration file.&#10;- Cleaned up `tsconfig` files by removing redundant `baseUrl` properties." />
+    <option name="LAST_COMMIT_MESSAGE" value="Implemented media details view and integrated Prettier for code formatting.&#10;&#10;- Updated `MediaRoute` to fetch and display processed episode metadata, including duration and episode numbering.&#10;- Implemented loading and error UI states using Lucide icons and alert components.&#10;- Added `prettier` as a dev dependency and introduced a `.prettierrc` configuration file.&#10;- Cleaned up `tsconfig` files by removing redundant `baseUrl` properties." />
   </component>
 </project>

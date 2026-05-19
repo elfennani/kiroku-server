@@ -1,40 +1,40 @@
 import useProfileQuery from "@/api/profile.query.tsx";
-import {LucideLoader2, LucideTriangleAlert, LucideUser2} from "lucide-react";
-import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert.tsx";
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.tsx";
+import { LucideUser2 } from "lucide-react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar.tsx";
+import { Skeleton } from "@/components/ui/skeleton.tsx";
 
 const Profile = () => {
-    const {data, isPending, isError, error} = useProfileQuery();
+  const { data, isPending, isError } = useProfileQuery();
 
-    if (isPending) {
-        return (
-            <div className="w-full flex items-center justify-center h-64">
-                <LucideLoader2 className="animate-spin"/>
-            </div>
-        )
-    }
+  if (isPending) {
+    return <Skeleton className="border border-border w-40 h-12" />;
+  }
 
-    if (isError) {
-        return <Alert>
-            <LucideTriangleAlert/>
-            <AlertTitle>Failed to fetch profile!</AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
-        </Alert>
-    }
-
+  if (isError) {
     return (
-        <div className="flex items-center gap-4">
-            <Avatar className="size-12">
-                {!!data.avatar_url && <AvatarImage src={data.avatar_url}/>}
-                <AvatarFallback>
-                    <LucideUser2/>
-                </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 flex flex-col gap-2">
-                <h1 className="text-lg font-bold">{data.name}</h1>
-                <p className="text-sm text-secondary-foreground">{data.description}</p>
-            </div>
-        </div>
+      <Skeleton className="border border-destructive/75 bg-destructive/35 animate-none w-40 h-12" />
     );
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-4 bg-secondary border border-border px-3 py-1 h-12 hover:bg-secondary-foreground/25">
+      <div className="flex-1 flex flex-col items-end text-end">
+        <h1 className="font-medium leading-none">{data.name}</h1>
+        <p className="text-xs text-secondary-foreground leading-none">
+          #{data.id}
+        </p>
+      </div>
+      <Avatar className="h-full outline-none after:border-none">
+        {!!data.avatar_url && <AvatarImage src={data.avatar_url} />}
+        <AvatarFallback>
+          <LucideUser2 />
+        </AvatarFallback>
+      </Avatar>
+    </div>
+  );
 };
 export default Profile;
