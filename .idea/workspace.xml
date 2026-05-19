@@ -11,24 +11,11 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added description.">
-      <change afterPath="$PROJECT_DIR$/src/infrastructure/media_processor.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/infrastructure/packager/service.rs" afterDir="false" />
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Implemented a background media processing service for transcoding and packaging.&#10;&#10;- Introduced `PackagerService` to manage an asynchronous pipeline for transcoding video (720p, 1080p), extracting audio/subtitles, and HLS packaging.&#10;- Implemented `MediaProcessorRepository` to persist media metadata and track processing status in SQLite.&#10;- Added a `/enqueue` POST endpoint to trigger the processing pipeline for specific media files.&#10;- Updated the `Packager` utility to improve `ffmpeg` error handling, capture stdout progress, and return the final master playlist path.&#10;- Enhanced the database migration runner to support multiple SQL statements per migration file.&#10;- Expanded the database schema (Migration v3) to include tables for `metadata`, `chapters`, `streams`, and `processing_queue`.&#10;- Added `uuid` and `directories` dependencies to manage unique processing identifiers and project data paths.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/handlers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/handlers.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/payloads.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/payloads.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/routes.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/routes.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/api/server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/domain/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/domain/models.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/domain/traits.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/domain/traits.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/errors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/errors.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/database/migration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/database/migration.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/packager.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/packager.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -112,7 +99,7 @@
       <recent name="$PROJECT_DIR$/src/infrastructure" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Cargo.Run kiroku-server">
     <configuration name="Run kiroku-server" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="run --package kiroku-server --bin kiroku-server  -- 41503 eTZA3Vk1c9UrN95g2fl7RrcvsTFthaEJRKw8xnci" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -149,6 +136,15 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <list>
+      <item itemvalue="Cargo.Run" />
+      <item itemvalue="Cargo.Run kiroku-server" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cargo.Run kiroku-server" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
@@ -224,7 +220,23 @@
       <option name="project" value="LOCAL" />
       <updated>1779146290413</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Implemented a background media processing service for transcoding and packaging.&#10;&#10;- Introduced `PackagerService` to manage an asynchronous pipeline for transcoding video (720p, 1080p), extracting audio/subtitles, and HLS packaging.&#10;- Implemented `MediaProcessorRepository` to persist media metadata and track processing status in SQLite.&#10;- Added a `/enqueue` POST endpoint to trigger the processing pipeline for specific media files.&#10;- Updated the `Packager` utility to improve `ffmpeg` error handling, capture stdout progress, and return the final master playlist path.&#10;- Enhanced the database migration runner to support multiple SQL statements per migration file.&#10;- Expanded the database schema (Migration v3) to include tables for `metadata`, `chapters`, `streams`, and `processing_queue`.&#10;- Added `uuid` and `directories` dependencies to manage unique processing identifiers and project data paths.">
+      <option name="closed" value="true" />
+      <created>1779202283470</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1779202283470</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Implemented a background media processing service for transcoding and packaging.&#10;&#10;- Introduced `PackagerService` to manage an asynchronous pipeline for transcoding video (720p, 1080p), extracting audio/subtitles, and HLS packaging.&#10;- Implemented `MediaProcessorRepository` to persist media metadata and track processing status in SQLite.&#10;- Added a `/enqueue` POST endpoint to trigger the processing pipeline for specific media files.&#10;- Updated the `Packager` utility to improve `ffmpeg` error handling, capture stdout progress, and return the final master playlist path.&#10;- Enhanced the database migration runner to support multiple SQL statements per migration file.&#10;- Expanded the database schema (Migration v3) to include tables for `metadata`, `chapters`, `streams`, and `processing_queue`.&#10;- Added `uuid` and `directories` dependencies to manage unique processing identifiers and project data paths.">
+      <option name="closed" value="true" />
+      <created>1779202290423</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1779202290423</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -237,7 +249,8 @@
     <MESSAGE value="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging." />
     <MESSAGE value="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction." />
     <MESSAGE value="Added description." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added description." />
+    <MESSAGE value="Implemented a background media processing service for transcoding and packaging.&#10;&#10;- Introduced `PackagerService` to manage an asynchronous pipeline for transcoding video (720p, 1080p), extracting audio/subtitles, and HLS packaging.&#10;- Implemented `MediaProcessorRepository` to persist media metadata and track processing status in SQLite.&#10;- Added a `/enqueue` POST endpoint to trigger the processing pipeline for specific media files.&#10;- Updated the `Packager` utility to improve `ffmpeg` error handling, capture stdout progress, and return the final master playlist path.&#10;- Enhanced the database migration runner to support multiple SQL statements per migration file.&#10;- Expanded the database schema (Migration v3) to include tables for `metadata`, `chapters`, `streams`, and `processing_queue`.&#10;- Added `uuid` and `directories` dependencies to manage unique processing identifiers and project data paths." />
+    <option name="LAST_COMMIT_MESSAGE" value="Implemented a background media processing service for transcoding and packaging.&#10;&#10;- Introduced `PackagerService` to manage an asynchronous pipeline for transcoding video (720p, 1080p), extracting audio/subtitles, and HLS packaging.&#10;- Implemented `MediaProcessorRepository` to persist media metadata and track processing status in SQLite.&#10;- Added a `/enqueue` POST endpoint to trigger the processing pipeline for specific media files.&#10;- Updated the `Packager` utility to improve `ffmpeg` error handling, capture stdout progress, and return the final master playlist path.&#10;- Enhanced the database migration runner to support multiple SQL statements per migration file.&#10;- Expanded the database schema (Migration v3) to include tables for `metadata`, `chapters`, `streams`, and `processing_queue`.&#10;- Added `uuid` and `directories` dependencies to manage unique processing identifiers and project data paths." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

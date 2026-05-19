@@ -5,6 +5,8 @@ use crate::infrastructure::packager::service::PackagerService;
 use crate::infrastructure::session::SessionRepositoryImpl;
 use crate::infrastructure::user::UserRepositoryImpl;
 use anyhow::Context;
+use log::info;
+use mdns_sd::{ServiceDaemon, ServiceInfo};
 use std::sync::Arc;
 
 pub struct ServerState {
@@ -17,6 +19,7 @@ pub struct ServerState {
 
 pub struct Server {
     state: Arc<ServerState>,
+    mdns_daemon: Arc<ServiceDaemon>,
 }
 
 impl Server {
@@ -26,6 +29,8 @@ impl Server {
         client_id: &str,
         client_secret: &str,
     ) -> Self {
+        let mdns = ServiceDaemon::new().expect("Failed to create daemon");
+
         Self {
             state: Arc::new(ServerState {
                 session_repository: Arc::new(SessionRepositoryImpl::new(db.clone())),
@@ -34,6 +39,7 @@ impl Server {
                 client_secret: client_secret.to_owned(),
                 packager_service,
             }),
+            mdns_daemon: Arc::new(mdns),
         }
     }
 
@@ -43,11 +49,32 @@ impl Server {
             .await
             .context("failed to bind TCP listener")?;
 
+        let mdns = self.mdns_daemon.clone();
+        tokio::spawn(async move {
+            let service_type = "_kiroku._udp.local.";
+            let instance_name = "kiroku";
+            let ip = local_ip_address::local_ip().unwrap().to_string();
+            let host_name = "kiroku.local.";
+            let port = 8642;
+
+            let service =
+                ServiceInfo::new(service_type, instance_name, host_name, ip, port, None).unwrap();
+
+            mdns.register(service).unwrap();
+            info!("Registering service");
+        });
+
         println!("Listening on {}", listener.local_addr()?);
         axum::serve(listener, app)
             .await
             .context("error serving axum server")?;
 
         Ok(())
+    }
+}
+
+impl Drop for Server {
+    fn drop(&mut self) {
+        self.mdns_daemon.shutdown().ok();
     }
 }

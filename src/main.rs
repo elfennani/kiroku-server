@@ -109,7 +109,7 @@ async fn main() -> anyhow::Result<()> {
     {
         let packager_service = packager_service.clone();
         tokio::spawn(async move {
-            packager_service.start().await;
+            packager_service.start().await.ok();
         });
     }
 
