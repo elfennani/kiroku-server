@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -8,7 +9,7 @@ pub enum AppError {
     InternalServer(String),
 
     TranscodeError(String), // Transcoder (ffmpeg) error
-    PackagerError(String), // Shaka packager specific errors
+    PackagerError(String),  // Shaka packager specific errors
 }
 
 impl From<rusqlite::Error> for AppError {
@@ -32,6 +33,19 @@ impl From<AppError> for StatusCode {
             AppError::JsonParseError(_) => StatusCode::BAD_REQUEST,
             AppError::TranscodeError(_) => StatusCode::BAD_REQUEST,
             AppError::PackagerError(_) => StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
+impl Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::JsonParseError(err) => write!(f, "JsonParseError: {}", err),
+            AppError::BadRequest(err) => write!(f, "BadRequest: {}", err),
+            AppError::NotFound(err) => write!(f, "NotFound: {}", err),
+            AppError::InternalServer(err) => write!(f, "InternalServer: {}", err),
+            AppError::TranscodeError(err) => write!(f, "TranscodeError: {}", err),
+            AppError::PackagerError(err) => write!(f, "PackagerError: {}", err),
         }
     }
 }

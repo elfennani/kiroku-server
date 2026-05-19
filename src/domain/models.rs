@@ -1,4 +1,7 @@
+use crate::infrastructure::packager::metadata::MediaMetadata;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
@@ -52,4 +55,28 @@ pub struct Media {
     pub banner: Option<String>,
     pub media_type: MediaType,
     pub status: MediaStatus,
+}
+
+#[derive(Debug)]
+pub enum ProcessingStatus {
+    Queued,
+    Processing,
+    Done,
+}
+
+#[derive(Debug)]
+pub struct ProcessingQueueItem {
+    pub id: Uuid,
+    pub status: ProcessingStatus,
+    pub path: PathBuf,
+    pub playlist_path: Option<PathBuf>,
+    pub metadata: MediaMetadata,
+    pub processed_files: Vec<PathBuf>,
+    pub input_file: PathBuf,
+}
+
+pub enum ProcessedFileType {
+    Audio,
+    Subtitle,
+    Video,
 }

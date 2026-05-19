@@ -1,4 +1,5 @@
 pub mod metadata;
+pub mod service;
 
 use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
@@ -31,7 +32,7 @@ pub struct Packager {
 }
 
 impl Packager {
-    pub async fn new(input: impl AsRef<Path>, output_dir: impl AsRef<Path>) -> Result<Self> {
+    pub fn new(input: impl AsRef<Path>, output_dir: impl AsRef<Path>) -> Result<Self> {
         let input = input.as_ref();
         let output_dir = output_dir.as_ref();
 
@@ -45,6 +46,12 @@ impl Packager {
         if !output_dir.exists() {
             std::fs::create_dir_all(output_dir)
                 .map_err(|err| AppError::InternalServer(err.to_string()))?;
+        }
+
+        if !output_dir.is_dir() {
+            return Err(AppError::BadRequest(String::from(
+                "Output path is not a directory",
+            )));
         }
 
         Ok(Self {
@@ -96,10 +103,8 @@ impl Packager {
         let handle = Command::new("ffmpeg")
             .args([
                 "-hide_banner",
-                "-v",
-                "error",
                 "-progress",
-                "pipe:1",
+                "pipe:1", // Print progress in stdout (FD is 1).
                 "-nostats",
                 "-y", // to overwrite if exists
                 "-i",
@@ -142,7 +147,19 @@ impl Packager {
             }
         }
 
-        handle.wait_with_output().await.ok();
+        // We need to wait for the command to finish or else the function returns prematurely.
+        match handle.wait_with_output().await {
+            Ok(output) => {
+                if !output.status.success() {
+                    return Err(AppError::TranscodeError(
+                        "ffmpeg exited with an error".to_string(),
+                    ));
+                }
+            }
+            Err(err) => {
+                return Err(AppError::TranscodeError(err.to_string()));
+            }
+        }
 
         self.streams.insert(format!("in=video_{res}p.mp4,stream=video,segment_template=h264_{res}p/$Number$.ts,playlist_name=h264_{res}p/main.m3u8,iframe_playlist_name=h264_{res}p/iframe.m3u8", res = resolution));
 
@@ -261,6 +278,6 @@ impl Packager {
             return Err(AppError::PackagerError(err.to_string()));
         }
 
-        Ok(self.output_dir)
+        Ok(self.output_dir.join("h264_master.m3u8"))
     }
 }

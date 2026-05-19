@@ -11,9 +11,24 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction.">
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added description.">
+      <change afterPath="$PROJECT_DIR$/src/infrastructure/media_processor.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/infrastructure/packager/service.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/handlers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/handlers.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/payloads.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/payloads.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/routes.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/routes.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/server.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/domain/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/domain/models.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/domain/traits.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/domain/traits.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/errors.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/errors.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/database/migration.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/database/migration.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/infrastructure/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/infrastructure/packager/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/packager.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/packager.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -97,11 +112,13 @@
       <recent name="$PROJECT_DIR$/src/infrastructure" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Run">
+  <component name="RunManager">
     <configuration name="Run kiroku-server" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
       <option name="command" value="run --package kiroku-server --bin kiroku-server  -- 41503 eTZA3Vk1c9UrN95g2fl7RrcvsTFthaEJRKw8xnci" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <envs />
+      <envs>
+        <env name="RUST_LOG" value="trace" />
+      </envs>
       <option name="emulateTerminal" value="true" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -199,7 +216,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779145336685</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Added description.">
+      <option name="closed" value="true" />
+      <created>1779146290413</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1779146290413</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -211,15 +236,31 @@
     <MESSAGE value="Reorganized the project structure." />
     <MESSAGE value="Added the `kiroku-packager` binary and infrastructure for media metadata extraction and HLS packaging." />
     <MESSAGE value="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactored `Packager` to use granular transcoding methods and improved the CLI workflow.&#10;&#10;- Split the monolithic `encode` method into `transcode_video`, `transcode_audio`, and `extract_subtitles`.&#10;- Implemented video transcoding progress tracking by piping `ffmpeg` output.&#10;- Added a `OnceLock` to `Packager` to cache `MediaMetadata`.&#10;- Updated the CLI to manage the full transcode-and-package lifecycle, including temporary file cleanup.&#10;- Introduced `env_logger` for structured logging and added specific `TranscodeError` and `PackagerError` types.&#10;- Fixed duration calculation in metadata extraction." />
+    <MESSAGE value="Added description." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added description." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/src/api/handlers.rs</url>
-          <line>94</line>
+          <line>96</line>
           <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/api/handlers.rs</url>
+          <line>209</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/infrastructure/packager/service.rs</url>
+          <line>48</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/infrastructure/packager/service.rs</url>
+          <line>59</line>
+          <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

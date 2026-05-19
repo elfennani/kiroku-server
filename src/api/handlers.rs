@@ -1,4 +1,4 @@
-use crate::api::payloads::AuthenticateParams;
+use crate::api::payloads::{AuthenticateParams, EnqueueVideo};
 use crate::api::server::ServerState;
 use crate::domain::models::{Image, Media, MediaStatus, MediaType, User};
 use crate::infrastructure::anilist;
@@ -9,6 +9,8 @@ use axum::extract::{Query, State};
 use axum::response::{IntoResponse, Redirect};
 use axum::{Json, http};
 use graphql_client::GraphQLQuery;
+use log::error;
+use reqwest::StatusCode;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -199,4 +201,19 @@ pub async fn get_ongoing_media(
             }
         },
     }
+}
+
+pub async fn enqueue_process(
+    State(state): State<Arc<ServerState>>,
+    Json(input): Json<EnqueueVideo>,
+) -> Result<impl IntoResponse, http::StatusCode> {
+    if let Err(err) = state
+        .packager_service
+        .enqueue(input.path.into(), input.media_id, input.episode)
+        .await
+    {
+        error!("Enqueue route error: {}", err);
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }

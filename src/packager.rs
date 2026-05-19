@@ -21,7 +21,7 @@ async fn main() {
     let file_name = &args[1];
     let output_dir = &args[2];
 
-    let mut packager = Packager::new(file_name, output_dir).await.unwrap();
+    let mut packager = Packager::new(file_name, output_dir).unwrap();
     info!("Initialized packager for: {}", &file_name);
 
     let metadata = packager.get_metadata().await.unwrap();

@@ -4,3 +4,4 @@ pub mod user;
 pub mod anilist;
 
 pub mod packager;
+pub mod media_processor;
