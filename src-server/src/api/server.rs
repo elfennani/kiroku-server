@@ -1,6 +1,7 @@
 use crate::api::routes::create_router;
-use crate::domain::traits::{SessionRepository, UserRepository};
+use crate::domain::traits::{MediaProcessorRepository, SessionRepository, UserRepository};
 use crate::infrastructure::database::Database;
+use crate::infrastructure::media_processor::MediaProcessorRepositoryImpl;
 use crate::infrastructure::packager::service::PackagerService;
 use crate::infrastructure::session::SessionRepositoryImpl;
 use crate::infrastructure::user::UserRepositoryImpl;
@@ -13,6 +14,7 @@ use std::sync::Arc;
 pub struct ServerState {
     pub user_repository: Arc<dyn UserRepository>,
     pub session_repository: Arc<dyn SessionRepository>,
+    pub media_processor_repo: Arc<dyn MediaProcessorRepository>,
     pub client_id: String,
     pub client_secret: String,
     pub packager_service: Arc<PackagerService>,
@@ -36,6 +38,7 @@ impl Server {
             state: Arc::new(ServerState {
                 session_repository: Arc::new(SessionRepositoryImpl::new(db.clone())),
                 user_repository: Arc::new(UserRepositoryImpl::new(db.clone())),
+                media_processor_repo: Arc::new(MediaProcessorRepositoryImpl::new(db.clone())),
                 client_id: client_id.to_owned(),
                 client_secret: client_secret.to_owned(),
                 packager_service,

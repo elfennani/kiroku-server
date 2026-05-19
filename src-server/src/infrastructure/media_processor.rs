@@ -1,5 +1,5 @@
 use crate::domain::models::{
-    MediaStatus, ProcessedFileType, ProcessingQueueItem, ProcessingStatus,
+    MediaStatus, ProcessedFileType, ProcessedMedia, ProcessingQueueItem, ProcessingStatus,
 };
 use crate::domain::traits::MediaProcessorRepository;
 use crate::infrastructure::database::Database;
@@ -398,5 +398,33 @@ impl MediaProcessorRepository for MediaProcessorRepositoryImpl {
         );
 
         Ok(processing_item?)
+    }
+
+    fn get_processed_media_by_media_id(&self, media_id: usize) -> Result<Vec<ProcessedMedia>> {
+        let conn = self.db.connection.lock().unwrap();
+        let mut stmt = conn.prepare(
+            // language=sqlite
+            "
+            SELECT processing_queue.uuid, mm.episode, duration
+            FROM processing_queue
+                     INNER JOIN main.metadata m on m.id = processing_queue.metadata_id
+                     INNER JOIN main.media_metadata mm on m.id = mm.metadata_id
+            WHERE status='done' AND media_id=?
+            ",
+        )?;
+
+        let processed_media: Vec<ProcessedMedia> = stmt
+            .query_map(params![media_id as i64], |row| {
+                Ok(ProcessedMedia {
+                    id: Uuid::from_str(row.get::<usize, String>(0)?.as_str()).unwrap(),
+                    episode: row.get(1)?,
+                    duration: row.get(2)?,
+                })
+            })?
+            .filter(|m| m.is_ok())
+            .map(|m| m.unwrap())
+            .collect();
+
+        Ok(processed_media)
     }
 }

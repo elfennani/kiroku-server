@@ -5,7 +5,7 @@ use crate::infrastructure::anilist;
 use crate::infrastructure::anilist::client::AnilistClient;
 use crate::infrastructure::anilist::viewer_query::Variables;
 use crate::infrastructure::anilist::{GraphQLResponse, ongoing_query, viewer_query};
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Redirect};
 use axum::{Json, http};
 use graphql_client::GraphQLQuery;
@@ -14,6 +14,7 @@ use reqwest::StatusCode;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub async fn authenticate(
     Query(params): Query<AuthenticateParams>,
@@ -216,4 +217,20 @@ pub async fn enqueue_process(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Deserialize)]
+pub struct Params {
+    media_id: usize,
+}
+
+pub async fn get_processed_media_by_media_id(
+    State(state): State<Arc<ServerState>>,
+    Path(Params { media_id }): Path<Params>,
+) -> Result<impl IntoResponse, http::StatusCode> {
+    let media = state
+        .media_processor_repo
+        .get_processed_media_by_media_id(media_id)?;
+
+    Ok(Json(media))
 }

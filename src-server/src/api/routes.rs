@@ -1,4 +1,4 @@
-use crate::api::handlers::{authenticate, enqueue_process, get_ongoing_media, login, profile};
+use crate::api::handlers::*;
 use crate::api::server::ServerState;
 use axum::Router;
 use axum::routing::{get, post};
@@ -11,5 +11,9 @@ pub fn create_router(state: Arc<ServerState>) -> Router {
         .route("/user/me", get(profile))
         .route("/media/ongoing", get(get_ongoing_media))
         .route("/enqueue", post(enqueue_process))
+        .route(
+            "/media/{media_id}/processed",
+            get(get_processed_media_by_media_id),
+        )
         .with_state(state)
 }

@@ -80,3 +80,10 @@ pub enum ProcessedFileType {
     Subtitle,
     Video,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ProcessedMedia {
+    pub id: Uuid,
+    pub episode: f32,
+    pub duration: i32,
+}

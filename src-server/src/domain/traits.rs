@@ -1,4 +1,6 @@
-use crate::domain::models::{ProcessedFileType, ProcessingQueueItem, ProcessingStatus, User};
+use crate::domain::models::{
+    ProcessedFileType, ProcessedMedia, ProcessingQueueItem, ProcessingStatus, User,
+};
 use crate::infrastructure::packager::metadata::{
     AudioStream, Chapter, MediaMetadata, SubtitleStream,
 };
@@ -20,7 +22,12 @@ pub trait UserRepository: Sync + Send {
 pub trait MediaProcessorRepository: Sync + Send {
     // Inserts media metadata to the database and returns the ID of the row.
     fn save_metadata(&self, media_metadata: MediaMetadata) -> Result<i64>;
-    fn enqueue(&self, metadata_id: usize, output_dir: &PathBuf, input_file: &PathBuf) -> Result<Uuid>;
+    fn enqueue(
+        &self,
+        metadata_id: usize,
+        output_dir: &PathBuf,
+        input_file: &PathBuf,
+    ) -> Result<Uuid>;
     fn set_processing_status(
         &self,
         processing_uuid: Uuid,
@@ -45,4 +52,6 @@ pub trait MediaProcessorRepository: Sync + Send {
     fn get_metadata(&self, id: i64) -> Result<MediaMetadata>;
 
     fn get_processing_item(&self, id: Uuid) -> Result<ProcessingQueueItem>;
+
+    fn get_processed_media_by_media_id(&self, media_id: usize) -> Result<Vec<ProcessedMedia>>;
 }
