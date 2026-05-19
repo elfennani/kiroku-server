@@ -29,3 +29,4 @@ log = "0.4.29"
 directories = "6.0.0"
 uuid = { version = "1.23.1", features = ["v4", "serde"] }
 local-ip-address = "0.6.12"
+tower-http = { version = "0.6.10", features = ["fs"] }

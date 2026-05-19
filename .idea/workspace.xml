@@ -16,16 +16,19 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Reorganized the project structure by moving the Rust backend to a `src-server` directory and prefixing API routes. And initialized a React.js project.">
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers.">
+      <change afterPath="$PROJECT_DIR$/.prettierrc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/api/processed.query.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src-server/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src-server/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/api/handlers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/handlers.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/api/routes.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/routes.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src-server/src/api/server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/server.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/domain/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/domain/models.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/domain/traits.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/domain/traits.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/media_processor.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/media_processor.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/routes/Media.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Media.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.app.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.node.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.node.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,8 +44,8 @@
       <list>
         <option value="GraphQL File" />
         <option value="Rust File" />
-        <option value="TypeScript File" />
         <option value="TypeScript JSX File" />
+        <option value="TypeScript File" />
       </list>
     </option>
   </component>
@@ -76,39 +79,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Cargo.Run kiroku-server.executor&quot;: &quot;Run&quot;,
-    &quot;Cargo.clean.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/elfennani/RustroverProjects/kiroku-server&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust.build.tool.cargo&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;/Users/elfennani/RustroverProjects/kiroku-server/node_modules/typescript/lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Cargo.Run kiroku-server.executor": "Run",
+    "Cargo.clean.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "master",
+    "javascript.preferred.runtime.type.id": "node",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/elfennani/RustroverProjects/kiroku-server",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "npm.dev.executor": "Run",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "settings.javascript.prettier",
+    "ts.external.directory.path": "/Users/elfennani/RustroverProjects/kiroku-server/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src-server" />
@@ -249,7 +252,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779215259087</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers.">
+      <option name="closed" value="true" />
+      <created>1779217427092</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1779217427092</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -267,6 +278,7 @@
     <MESSAGE value="Implemented a background media processing service for transcoding and packaging.&#10;&#10;- Introduced `PackagerService` to manage an asynchronous pipeline for transcoding video (720p, 1080p), extracting audio/subtitles, and HLS packaging.&#10;- Implemented `MediaProcessorRepository` to persist media metadata and track processing status in SQLite.&#10;- Added a `/enqueue` POST endpoint to trigger the processing pipeline for specific media files.&#10;- Updated the `Packager` utility to improve `ffmpeg` error handling, capture stdout progress, and return the final master playlist path.&#10;- Enhanced the database migration runner to support multiple SQL statements per migration file.&#10;- Expanded the database schema (Migration v3) to include tables for `metadata`, `chapters`, `streams`, and `processing_queue`.&#10;- Added `uuid` and `directories` dependencies to manage unique processing identifiers and project data paths." />
     <MESSAGE value="Implemented mDNS advertising." />
     <MESSAGE value="Reorganized the project structure by moving the Rust backend to a `src-server` directory and prefixing API routes. And initialized a React.js project." />
-    <option name="LAST_COMMIT_MESSAGE" value="Reorganized the project structure by moving the Rust backend to a `src-server` directory and prefixing API routes. And initialized a React.js project." />
+    <MESSAGE value="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers." />
   </component>
 </project>

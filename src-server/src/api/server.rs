@@ -7,9 +7,11 @@ use crate::infrastructure::session::SessionRepositoryImpl;
 use crate::infrastructure::user::UserRepositoryImpl;
 use anyhow::Context;
 use axum::Router;
+use axum::routing::get_service;
 use log::info;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use std::sync::Arc;
+use tower_http::services::ServeDir;
 
 pub struct ServerState {
     pub user_repository: Arc<dyn UserRepository>,
@@ -48,7 +50,12 @@ impl Server {
     }
 
     pub async fn serve(&self) -> anyhow::Result<()> {
-        let app = Router::new().nest("/api", create_router(self.state.clone()));
+        let static_files_service = get_service(
+            ServeDir::new("dist").fallback(tower_http::services::ServeFile::new("dist/index.html")),
+        );
+        let app = Router::new()
+            .nest("/api", create_router(self.state.clone()))
+            .fallback_service(static_files_service);
 
         let listener = tokio::net::TcpListener::bind("0.0.0.0:8642")
             .await
