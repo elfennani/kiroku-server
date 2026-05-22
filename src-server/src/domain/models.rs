@@ -100,3 +100,9 @@ pub struct MediaDetails {
     pub status: MediaStatus,
     pub episodes: Vec<ProcessedEpisode>,
 }
+
+impl MediaDetails {
+    pub fn set_episodes(&mut self, episodes: Vec<ProcessedEpisode>) {
+        self.episodes = episodes;
+    }
+}

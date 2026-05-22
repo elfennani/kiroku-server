@@ -61,7 +61,9 @@ const MediaRoute = () => {
             <span className="text-sm uppercase text-secondary-foreground tracking-wider">
               ANIME
             </span>
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-medium line-clamp-2">{data.title}</h1>
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-medium line-clamp-2">
+              {data.title}
+            </h1>
           </div>
 
           <div>
@@ -81,7 +83,10 @@ const MediaRoute = () => {
             Episodes
           </h3>
           {data.episodes.map((media) => (
-            <div key={media.id} className="flex px-4 lg:px-8 py-2 group gap-4 items-center cursor-pointer hover:bg-secondary-foreground/10">
+            <div
+              key={media.id}
+              className="flex px-4 lg:px-8 py-2 group gap-4 items-center cursor-pointer hover:bg-secondary-foreground/10"
+            >
               <div className="w-24 md:w-32 aspect-video bg-secondary flex items-center justify-center text-secondary-foreground">
                 {media.thumbnail ? (
                   <img
@@ -105,7 +110,6 @@ const MediaRoute = () => {
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );
