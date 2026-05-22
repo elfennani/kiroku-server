@@ -1,5 +1,5 @@
 use crate::domain::models::{
-    MediaStatus, ProcessedFileType, ProcessedMedia, ProcessingQueueItem, ProcessingStatus,
+    MediaStatus, ProcessedEpisode, ProcessedFileType, ProcessingQueueItem, ProcessingStatus,
 };
 use crate::domain::traits::MediaProcessorRepository;
 use crate::infrastructure::database::Database;
@@ -400,7 +400,7 @@ impl MediaProcessorRepository for MediaProcessorRepositoryImpl {
         Ok(processing_item?)
     }
 
-    fn get_processed_media_by_media_id(&self, media_id: usize) -> Result<Vec<ProcessedMedia>> {
+    fn get_processed_media_by_media_id(&self, media_id: usize) -> Result<Vec<ProcessedEpisode>> {
         let conn = self.db.connection.lock().unwrap();
         let mut stmt = conn.prepare(
             // language=sqlite
@@ -413,12 +413,14 @@ impl MediaProcessorRepository for MediaProcessorRepositoryImpl {
             ",
         )?;
 
-        let processed_media: Vec<ProcessedMedia> = stmt
+        let processed_media: Vec<ProcessedEpisode> = stmt
             .query_map(params![media_id as i64], |row| {
-                Ok(ProcessedMedia {
+                Ok(ProcessedEpisode {
                     id: Uuid::from_str(row.get::<usize, String>(0)?.as_str()).unwrap(),
                     episode: row.get(1)?,
                     duration: row.get(2)?,
+                    title: None,
+                    thumbnail: None,
                 })
             })?
             .filter(|m| m.is_ok())

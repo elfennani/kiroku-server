@@ -82,8 +82,21 @@ pub enum ProcessedFileType {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ProcessedMedia {
+pub struct ProcessedEpisode {
     pub id: Uuid,
     pub episode: f32,
     pub duration: i32,
+    pub title: Option<String>,
+    pub thumbnail: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MediaDetails {
+    pub id: usize,
+    pub title: String,
+    pub description: Option<String>,
+    pub cover: Option<Image>,
+    pub banner: Option<String>,
+    pub status: MediaStatus,
+    pub episodes: Vec<ProcessedEpisode>,
 }

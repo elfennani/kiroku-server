@@ -17,16 +17,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Implemented media details view and integrated Prettier for code formatting.&#10;&#10;- Updated `MediaRoute` to fetch and display processed episode metadata, including duration and episode numbering.&#10;- Implemented loading and error UI states using Lucide icons and alert components.&#10;- Added `prettier` as a dev dependency and introduced a `.prettierrc` configuration file.&#10;- Cleaned up `tsconfig` files by removing redundant `baseUrl` properties.">
+      <change afterPath="$PROJECT_DIR$/src-server/schemes/anilist/queries/media_details.graphql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/layout/HomeLayout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/OngoingMedia.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/OngoingMedia.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Profile.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Profile.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ui/skeleton.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ui/skeleton.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/api/handlers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/handlers.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/api/routes.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/routes.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/api/server.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/server.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/domain/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/domain/models.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/domain/traits.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/domain/traits.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/anilist/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/anilist/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/media_processor.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/media_processor.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/processed.query.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/processed.query.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/routes/Home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Home.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsconfig.app.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.app.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsconfig.node.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.node.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/routes/Media.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Media.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -43,8 +48,8 @@
       <list>
         <option value="GraphQL File" />
         <option value="Rust File" />
-        <option value="TypeScript JSX File" />
         <option value="TypeScript File" />
+        <option value="TypeScript JSX File" />
       </list>
     </option>
   </component>

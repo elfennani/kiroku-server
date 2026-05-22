@@ -1,0 +1,28 @@
+query MediaDetailsQuery($id: Int!){
+    Media(id: $id){
+        id
+        title {
+            userPreferred
+            english
+            romaji
+            native
+        }
+        type
+        description
+        bannerImage
+        episodes
+        coverImage {
+            extraLarge
+            large
+            medium
+        }
+        mediaListEntry {
+            status
+            progress
+        }
+        streamingEpisodes {
+            title
+            thumbnail
+        }
+    }
+}

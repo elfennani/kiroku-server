@@ -1,5 +1,5 @@
 use crate::domain::models::{
-    ProcessedFileType, ProcessedMedia, ProcessingQueueItem, ProcessingStatus, User,
+    ProcessedFileType, ProcessedEpisode, ProcessingQueueItem, ProcessingStatus, User,
 };
 use crate::infrastructure::packager::metadata::{
     AudioStream, Chapter, MediaMetadata, SubtitleStream,
@@ -53,5 +53,5 @@ pub trait MediaProcessorRepository: Sync + Send {
 
     fn get_processing_item(&self, id: Uuid) -> Result<ProcessingQueueItem>;
 
-    fn get_processed_media_by_media_id(&self, media_id: usize) -> Result<Vec<ProcessedMedia>>;
+    fn get_processed_media_by_media_id(&self, media_id: usize) -> Result<Vec<ProcessedEpisode>>;
 }

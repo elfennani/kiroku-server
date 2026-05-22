@@ -1,44 +1,9 @@
-import Profile from "@/components/Profile.tsx";
-import OngoingMedia from "@/components/OngoingMedia.tsx";
-import { LucideSearch } from "lucide-react";
-import { Link } from "react-router";
-
 const Home = () => {
   return (
-    <div className="container px-6 pt-12 mx-auto space-y-6 md:space-y-12">
-      <header className="w-full flex items-center gap-4">
-        <Link
-          to={"/"}
-          className="text-4xl sm:text-5xl font-thin flex-1 hover:underline underline-offset-8"
-        >
-          Kiroku
-        </Link>
-        <div className="relative text-secondary-foreground max-lg:hidden">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-sm h-12 pl-10 pr-4 outline-none peer focus:border-primary bg-secondary text-foreground border border-border placeholder-secondary-foreground"
-          />
-          <LucideSearch className="absolute left-3 top-1/2 peer-focus:stroke-primary -translate-y-1/2 size-5 stroke-secondary-foreground" />
-        </div>
-        <Profile />
-      </header>
-      <div className="relative text-secondary-foreground lg:hidden">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="w-full h-12 pl-10 pr-4 outline-none peer focus:border-primary bg-secondary text-foreground border border-border placeholder-secondary-foreground"
-        />
-        <LucideSearch className="absolute left-3 top-1/2 peer-focus:stroke-primary -translate-y-1/2 size-5 stroke-secondary-foreground" />
-      </div>
-
-      <div className="lg:grid grid-cols-3">
-        <div>
-          <OngoingMedia />
-        </div>
-        <div className="col-span-2"></div>
-      </div>
+    <div className="min-h-full flex items-center justify-center text-secondary-foreground font-light text-sm">
+      Nothing to see here
     </div>
   );
 };
+
 export default Home;
