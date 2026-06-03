@@ -11,6 +11,8 @@ pub fn create_router(state: Arc<ServerState>) -> Router {
         .route("/user/me", get(profile))
         .route("/media/ongoing", get(get_ongoing_media))
         .route("/enqueue", post(enqueue_process))
+        .route("/episode/{id}/files/playlist.m3u8", get(get_episode_playlist))
+        .route("/episode/{id}/files/{*path}", get(get_episode_playlist_file))
         .route(
             "/media/{media_id}",
             get(get_media_details),

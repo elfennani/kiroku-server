@@ -6,15 +6,21 @@ use crate::infrastructure::anilist::queries::media_details;
 use crate::infrastructure::anilist::queries::media_details::MediaDetailsQueryParams;
 use crate::infrastructure::anilist::queries::ongoing::{OngoingQuery, OngoingQueryParams};
 use crate::infrastructure::anilist::queries::viewer::ViewerQuery;
+use axum::body::Body;
 use axum::extract::{Path, Query, State};
+use axum::http::Response;
 use axum::response::{IntoResponse, Redirect};
 use axum::{Json, http};
 use cynic::{GraphQlResponse, QueryBuilder};
 use log::error;
-use reqwest::StatusCode;
+use reqwest::{StatusCode, header};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
+use tokio::fs;
+use uuid::Uuid;
 
 pub async fn authenticate(
     Query(params): Query<AuthenticateParams>,
@@ -235,4 +241,59 @@ pub async fn get_media_details(
             Ok(Json(media))
         }
     }
+}
+
+#[derive(Deserialize)]
+pub struct EpisodeDetailsParams {
+    id: String,
+}
+
+pub async fn get_episode_playlist(
+    State(state): State<Arc<ServerState>>,
+    Path(EpisodeDetailsParams { id }): Path<EpisodeDetailsParams>,
+) -> Result<Response<Body>, http::StatusCode> {
+    let uuid = Uuid::from_str(&id).map_err(|_| http::StatusCode::BAD_REQUEST)?;
+
+    let item = state.media_processor_repo.get_processing_item(uuid)?;
+
+    if item.playlist_path.is_none() {
+        return Err(http::StatusCode::NOT_FOUND);
+    }
+
+    let bytes = fs::read(item.playlist_path.unwrap())
+        .await
+        .map_err(|_| http::StatusCode::NOT_FOUND)?;
+
+    Ok(Response::builder()
+        .header(header::CONTENT_TYPE, "application/vnd.apple.mpegurl")
+        .body(Body::from(bytes))
+        .unwrap())
+}
+
+#[derive(Deserialize)]
+pub struct GetEpisodePlaylistsParams {
+    id: String,
+    path: String,
+}
+
+pub async fn get_episode_playlist_file(
+    State(state): State<Arc<ServerState>>,
+    Path(GetEpisodePlaylistsParams { id, path }): Path<GetEpisodePlaylistsParams>,
+) -> Result<Response<Body>, http::StatusCode> {
+    let uuid = Uuid::from_str(&id).map_err(|_| http::StatusCode::BAD_REQUEST)?;
+
+    let item = state.media_processor_repo.get_processing_item(uuid)?;
+
+    if item.playlist_path.is_none() {
+        return Err(http::StatusCode::NOT_FOUND);
+    }
+
+    let file_path = PathBuf::from(&item.playlist_path.unwrap()).with_file_name(path);
+    println!("Looking for file: {:?}", file_path);
+
+    let bytes = fs::read(file_path)
+        .await
+        .map_err(|_| http::StatusCode::NOT_FOUND)?;
+
+    Ok(Response::builder().body(Body::from(bytes)).unwrap())
 }
