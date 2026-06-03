@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import {
   LucideArrowRight,
   LucideImageOff,
@@ -83,7 +83,8 @@ const MediaRoute = () => {
             Episodes
           </h3>
           {data.episodes.map((media) => (
-            <div
+            <Link
+              to={`/episode/${media.id}`}
               key={media.id}
               className="flex px-4 lg:px-8 py-2 group gap-4 items-center cursor-pointer hover:bg-secondary-foreground/10"
             >
@@ -107,7 +108,7 @@ const MediaRoute = () => {
                 </p>
               </div>
               <LucideArrowRight className="max-md:size-4" />
-            </div>
+            </Link>
           ))}
         </div>
       </div>
