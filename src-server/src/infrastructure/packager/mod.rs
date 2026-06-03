@@ -205,13 +205,30 @@ impl Packager {
         Ok(output_file)
     }
     pub async fn extract_subtitles(&mut self, subtitle_stream: SubtitleStream) -> Result<PathBuf> {
-        let output_file = self.output_dir.join(format!(
+        let mut output_file = self.output_dir.join(format!(
             "subtitles_{}.vtt",
             subtitle_stream
                 .language
                 .clone()
                 .unwrap_or(subtitle_stream.index.to_string())
         ));
+
+        let mut index = 0;
+        loop {
+            if output_file.exists() {
+                index = index + 1;
+                output_file = self.output_dir.join(format!(
+                    "subtitles_{}_{}.vtt",
+                    subtitle_stream
+                        .language
+                        .clone()
+                        .unwrap_or(subtitle_stream.index.to_string()),
+                    index
+                ));
+            } else {
+                break;
+            }
+        }
 
         // ffmpeg -i input.mkv -map 0:s:0 subtitles.vtt
         let output = Command::new("ffmpeg")

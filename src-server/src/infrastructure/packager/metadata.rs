@@ -47,6 +47,7 @@ impl MediaMetadata {
         data.streams.sort_by_key(|s| s.index);
         data.chapters.sort_by_key(|c| c.start);
 
+        // TODO: Handle multiple subtitles in the same language
         for stream in data.streams {
             if stream.codec_type == "audio" {
                 audio.push(AudioStream {

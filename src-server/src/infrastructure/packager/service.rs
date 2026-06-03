@@ -46,10 +46,13 @@ impl PackagerService {
             self.media_processor_repo
                 .enqueue(metadata_id as usize, &output_dir, &path_buf)?;
 
+        info!("Enqueued media in process: {}", process);
         self.tx.send(process).map_err(|err| {
             error!("Failed to enqueue packager: {}", err);
             AppError::PackagerError(err.to_string())
         })?;
+
+        info!("Process sent to packager!");
 
         Ok(process)
     }
@@ -57,77 +60,95 @@ impl PackagerService {
     pub async fn start(&self) -> Result<()> {
         let mut rx = self.rx.lock().await;
         while let Some(uuid) = rx.recv().await {
-            info!("PackagerService received: {:?}", uuid);
+            let result: Result<()> = {
+                info!("PackagerService received: {:?}", uuid);
 
-            let process = self.media_processor_repo.get_processing_item(uuid)?;
-            let mut packager =
-                Packager::new(process.input_file, self.output_dir.join(uuid.to_string()))?;
-            let metadata = packager.get_metadata().await?;
+                let process = self.media_processor_repo.get_processing_item(uuid)?;
+                let mut packager =
+                    Packager::new(process.input_file, self.output_dir.join(uuid.to_string()))?;
+                let metadata = packager.get_metadata().await?;
 
-            self.media_processor_repo
-                .set_processing_status(uuid, ProcessingStatus::Processing)?;
+                self.media_processor_repo
+                    .set_processing_status(uuid, ProcessingStatus::Processing)?;
 
-            info!("Transcoding Video in 720p");
-            let video = packager.transcode_video(720).await?;
-            self.media_processor_repo.insert_processed_files(
-                uuid,
-                video.file_name().unwrap().to_str().unwrap(),
-                &video,
-                ProcessedFileType::Video,
-            )?;
+                info!("Transcoding Video in 720p");
+                let video = packager.transcode_video(720).await?;
+                self.media_processor_repo.insert_processed_files(
+                    uuid,
+                    video.file_name().unwrap().to_str().unwrap(),
+                    &video,
+                    ProcessedFileType::Video,
+                )?;
 
-            info!("Transcoding Video in 1080p");
-            let video = packager.transcode_video(1080).await?;
-            self.media_processor_repo.insert_processed_files(
-                uuid,
-                video.file_name().unwrap().to_str().unwrap(),
-                &video,
-                ProcessedFileType::Video,
-            )?;
+                info!("Transcoding Video in 1080p");
+                let video = packager.transcode_video(1080).await?;
+                self.media_processor_repo.insert_processed_files(
+                    uuid,
+                    video.file_name().unwrap().to_str().unwrap(),
+                    &video,
+                    ProcessedFileType::Video,
+                )?;
 
-            for audio in metadata.audio {
-                info!(
+                for audio in metadata.audio {
+                    info!(
                     "Transcoding Audio Stream #{} ({})",
                     audio.index, audio.title
                 );
-                let audio = packager.transcode_audio(audio).await?;
-                self.media_processor_repo.insert_processed_files(
-                    uuid,
-                    audio.file_stem().unwrap().to_str().unwrap(),
-                    &audio,
-                    ProcessedFileType::Video,
-                )?;
-            }
+                    let audio = packager.transcode_audio(audio).await?;
+                    self.media_processor_repo.insert_processed_files(
+                        uuid,
+                        audio.file_stem().unwrap().to_str().unwrap(),
+                        &audio,
+                        ProcessedFileType::Video,
+                    )?;
+                }
 
-            for subtitle in metadata.subtitles {
-                info!(
+                for subtitle in metadata.subtitles {
+                    info!(
                     "Transcoding Subtitle Stream #{} ({})",
                     subtitle.index, subtitle.title
                 );
-                let subtitle = packager.extract_subtitles(subtitle).await?;
-                self.media_processor_repo.insert_processed_files(
-                    uuid,
-                    subtitle.file_stem().unwrap().to_str().unwrap(),
-                    &subtitle,
-                    ProcessedFileType::Video,
-                )?;
-            }
+                    let subtitle = packager.extract_subtitles(subtitle).await?;
+                    self.media_processor_repo.insert_processed_files(
+                        uuid,
+                        subtitle.file_stem().unwrap().to_str().unwrap(),
+                        &subtitle,
+                        ProcessedFileType::Video,
+                    )?;
+                }
 
-            info!("Packaging everything to a playlist");
-            let playlist = packager.package().await?;
-            self.media_processor_repo
-                .set_processing_playlist(uuid, &playlist)?;
-            self.media_processor_repo
-                .set_processing_status(uuid, ProcessingStatus::Done)?;
-
-            let process = self.media_processor_repo.get_processing_item(uuid)?;
-            for file in process.processed_files {
+                info!("Packaging everything to a playlist");
+                let playlist = packager.package().await?;
+                info!("Saving...");
                 self.media_processor_repo
-                    .delete_processed_file_by_path(&file)?;
-                std::fs::remove_file(&file)
-                    .map_err(|err| AppError::InternalServer(err.to_string()))?;
+                    .set_processing_playlist(uuid, &playlist)?;
+                self.media_processor_repo
+                    .set_processing_status(uuid, ProcessingStatus::Done)?;
+
+                info!("Deleting temporary files");
+                let process = self.media_processor_repo.get_processing_item(uuid)?;
+                info!("Deleting temporary files: {:?}", process.processed_files);
+                for file in process.processed_files {
+                    info!("Deleting temporary file: {}", file.to_string_lossy());
+                    self.media_processor_repo
+                        .delete_processed_file_by_path(&file)?;
+                    info!("Deleted db entry for file: {}", file.to_string_lossy());
+                    std::fs::remove_file(&file)
+                        .map_err(|err| AppError::InternalServer(err.to_string()))?;
+                    info!("Deleted file: {:?}", file);
+                }
+
+                info!("Packaging Done");
+
+                Ok(())
+            };
+
+            if let Err(e) = result {
+                error!("Error while processing: {:?}", e);
             }
         }
+
+        info!("PackagerService stopped");
 
         Ok(())
     }

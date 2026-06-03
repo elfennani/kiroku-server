@@ -5,6 +5,7 @@ use infrastructure::database::Database;
 use infrastructure::database::migration::Migration;
 use std::env;
 use std::sync::Arc;
+use log::info;
 
 mod api;
 mod domain;
@@ -116,6 +117,9 @@ async fn main() -> anyhow::Result<()> {
     let client_id = args[1].clone();
     let client_secret = args[2].clone();
     println!("Client ID: {}", client_id);
+    env_logger::init();
+
+    info!("Starting Server");
     let app = Server::new(
         db.clone(),
         packager_service.clone(),
