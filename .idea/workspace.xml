@@ -17,16 +17,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added a route for media details. Updated the user interface to support responsive UI.">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/packager/metadata.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/packager/metadata.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/api/handlers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/api/handlers.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/packager/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/packager/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/packager/service.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/packager/service.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/routes/Media.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Media.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -161,7 +155,7 @@
       <workItem from="1779212319298" duration="2634000" />
       <workItem from="1779467822266" duration="14000" />
       <workItem from="1779718408639" duration="19000" />
-      <workItem from="1780507547597" duration="6382000" />
+      <workItem from="1780507547597" duration="8197000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />

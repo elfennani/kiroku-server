@@ -289,7 +289,6 @@ pub async fn get_episode_playlist_file(
     }
 
     let file_path = PathBuf::from(&item.playlist_path.unwrap()).with_file_name(path);
-    println!("Looking for file: {:?}", file_path);
 
     let bytes = fs::read(file_path)
         .await

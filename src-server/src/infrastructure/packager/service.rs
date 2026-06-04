@@ -5,7 +5,7 @@ use crate::infrastructure::database::Database;
 use crate::infrastructure::media_processor::MediaProcessorRepositoryImpl;
 use crate::infrastructure::packager::Packager;
 use crate::prelude::*;
-use log::{error, info};
+use log::{debug, error, info};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -61,7 +61,7 @@ impl PackagerService {
         let mut rx = self.rx.lock().await;
         while let Some(uuid) = rx.recv().await {
             let result: Result<()> = {
-                info!("PackagerService received: {:?}", uuid);
+                debug!("PackagerService received: {:?}", uuid);
 
                 let process = self.media_processor_repo.get_processing_item(uuid)?;
                 let mut packager =
@@ -71,7 +71,7 @@ impl PackagerService {
                 self.media_processor_repo
                     .set_processing_status(uuid, ProcessingStatus::Processing)?;
 
-                info!("Transcoding Video in 720p");
+                debug!("Transcoding Video in 720p");
                 let video = packager.transcode_video(720).await?;
                 self.media_processor_repo.insert_processed_files(
                     uuid,
@@ -80,7 +80,7 @@ impl PackagerService {
                     ProcessedFileType::Video,
                 )?;
 
-                info!("Transcoding Video in 1080p");
+                debug!("Transcoding Video in 1080p");
                 let video = packager.transcode_video(1080).await?;
                 self.media_processor_repo.insert_processed_files(
                     uuid,
@@ -90,7 +90,7 @@ impl PackagerService {
                 )?;
 
                 for audio in metadata.audio {
-                    info!(
+                    debug!(
                     "Transcoding Audio Stream #{} ({})",
                     audio.index, audio.title
                 );
@@ -104,7 +104,7 @@ impl PackagerService {
                 }
 
                 for subtitle in metadata.subtitles {
-                    info!(
+                    debug!(
                     "Transcoding Subtitle Stream #{} ({})",
                     subtitle.index, subtitle.title
                 );
@@ -117,25 +117,25 @@ impl PackagerService {
                     )?;
                 }
 
-                info!("Packaging everything to a playlist");
+                debug!("Packaging everything to a playlist");
                 let playlist = packager.package().await?;
-                info!("Saving...");
+                debug!("Saving...");
                 self.media_processor_repo
                     .set_processing_playlist(uuid, &playlist)?;
                 self.media_processor_repo
                     .set_processing_status(uuid, ProcessingStatus::Done)?;
 
-                info!("Deleting temporary files");
+                debug!("Deleting temporary files");
                 let process = self.media_processor_repo.get_processing_item(uuid)?;
-                info!("Deleting temporary files: {:?}", process.processed_files);
+                debug!("Deleting temporary files: {:?}", process.processed_files);
                 for file in process.processed_files {
-                    info!("Deleting temporary file: {}", file.to_string_lossy());
+                    debug!("Deleting temporary file: {}", file.to_string_lossy());
                     self.media_processor_repo
                         .delete_processed_file_by_path(&file)?;
-                    info!("Deleted db entry for file: {}", file.to_string_lossy());
+                    debug!("Deleted db entry for file: {}", file.to_string_lossy());
                     std::fs::remove_file(&file)
                         .map_err(|err| AppError::InternalServer(err.to_string()))?;
-                    info!("Deleted file: {:?}", file);
+                    debug!("Deleted file: {:?}", file);
                 }
 
                 info!("Packaging Done");

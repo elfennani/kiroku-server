@@ -99,7 +99,7 @@ impl Packager {
         //          meaning it would not function in other platforms, so change to `libx264` it
         //          if someone wants to use this project.
 
-        // ffmpeg -i input.mkv -an -sn -vf "scale=-2:720" -c:v h264_videotoolbox video_720p.mp4
+        // ffmpeg -hide_banner -progress pipe:1 -nostats -i input.mkv -an -sn -vf "scale=-2:720" -c:v h264_videotoolbox -b:v 2500k video_720p.mp4
         let handle = Command::new("ffmpeg")
             .args([
                 "-hide_banner",
@@ -111,10 +111,12 @@ impl Packager {
                 self.file.to_str().unwrap(),
                 "-an",
                 "-sn",
-                "-vf",
+                "-vf", // Set simple filter for video stream.
                 format!("scale=-2:{}", resolution).as_str(),
                 "-c:v",
                 "h264_videotoolbox",
+                "-b:v", // Sets the bitrate of video
+                "2500k",
                 output_file.to_str().unwrap(),
             ])
             .stdout(Stdio::piped())
