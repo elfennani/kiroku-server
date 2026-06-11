@@ -3,9 +3,9 @@ use crate::infrastructure::packager::service::PackagerService;
 use directories::ProjectDirs;
 use infrastructure::database::Database;
 use infrastructure::database::migration::Migration;
+use log::info;
 use std::env;
 use std::sync::Arc;
-use log::info;
 
 mod api;
 mod domain;
@@ -93,7 +93,7 @@ async fn main() -> anyhow::Result<()> {
     ];
 
     let db = Arc::new(Database::open(
-        env::current_dir()?.join("./app.db"),
+        project_dirs.data_dir().join("./app.db"),
         migrations,
     )?);
 

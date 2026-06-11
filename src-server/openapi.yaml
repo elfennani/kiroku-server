@@ -1,0 +1,503 @@
+#file: noinspection YAMLSchemaValidation
+openapi: 3.1.1
+info:
+  title: Kiroku
+  summary: A local server designed to process and stream Anime episodes.
+  version: 1.0.0
+tags:
+  - auth
+  - media
+  - episodes
+paths:
+  /auth/login:
+    get:
+      summary: Redirect to AniList authorization URL
+      tags: [ auth ]
+      responses:
+        "308":
+          description: Redirect to AniList authorization URL successful.
+        "401":
+          description: Request must be made through the host device.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /auth/token:
+    get:
+      summary: Exchange authorization code for access & refresh token
+      tags:
+        - auth
+      parameters:
+        - in: query
+          name: code
+          required: true
+          description: Authorization Code
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Exchange successful.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Request must be made through the host device.
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /media:
+    get:
+      tags: [ media ]
+      summary: Get list of currently watching media
+      responses:
+        "200":
+          description: List successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MediaSummary"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /media/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: number
+    get:
+      tags: [ media ]
+      summary: Get media details and episodes.
+      responses:
+        "200":
+          description: Media details successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ data ]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Media"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /media/{id}/status:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: number
+    get:
+      tags: [ media ]
+      summary: Get AniList media status details.
+      responses:
+        "200":
+          description: Media status successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ data ]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MediaStatusDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [ media ]
+      summary: Update AniList media status and progress.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaStatusDetails"
+      responses:
+        "200":
+          description: Updated media status details.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ data ]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MediaStatusDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /episodes/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: UUID
+    get:
+      tags: [ episodes ]
+      summary: Get episode details
+      responses:
+        "200":
+          description: Episode details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ data ]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Episode"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /episodes/{id}/playlist.m3u8:
+    summary: Get HLS playlist of the episode
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: UUID
+    get:
+      tags: [ episodes ]
+      responses:
+        "200":
+          description: HLS Playlist content.
+          content:
+            application/vnd.apple.mpegurl:
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /episodes/queue:
+    get:
+      tags: [ episodes ]
+      summary: Get current queue and progress
+      responses:
+        "200":
+          description: Queue items successfully retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ data ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/QueueItem"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [ episodes ]
+      summary: Enqueues a list of episodes to be processed for streaming.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - path
+                  - media_id
+                  - episode
+                properties:
+                  path:
+                    type: string
+                    description: Absolute path of the video file in the host of the server.
+                  media_id:
+                    type: integer
+                  number:
+                    type: integer
+                    format: double
+                    description: Episode number, it has to be double due to the possibility of extra episodes.
+      responses:
+        "204":
+          description: Episode(s) successfully enqueued.
+        "400": # Episode doesn't exist (e.g. EP26 in a 12 episodes media) or empty list.
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  schemas:
+    Error:
+      type: object
+      required: [ message ]
+      properties:
+        message:
+          type: string
+    MediaStatus:
+      type: string
+      enum:
+        - PENDING
+        - REPEATING
+        - COMPLETED
+        - DROPPED
+        - PAUSED
+    MediaSummary:
+      type: object
+      required:
+        - id
+        - banner
+        - cover
+        - title
+        - progress
+        - total
+        - status
+      properties:
+        id:
+          type: number
+        banner:
+          type:
+            - string
+            - "null"
+        cover:
+          type:
+            - string
+            - "null"
+        title:
+          type: string
+        progress:
+          type:
+            - number
+            - "null"
+        total:
+          type:
+            - number
+            - "null"
+          description: Total number of episodes
+        status:
+          oneOf:
+            - $ref: "#/components/schemas/MediaStatus"
+            - type: "null"
+    MediaStatusDetails:
+      type: object
+      required: [ status, score, progress, start_date, finish_date, rewatch_count, private, note ]
+      properties:
+        status:
+          $ref: "#/components/schemas/MediaStatus"
+        score:
+          type: number
+        progress:
+          type: number
+        start_date:
+          oneOf:
+            - type: 'null'
+            - type: string
+              format: ISO 8601 Date
+              example: 2026-06-24
+        finish_date:
+          oneOf:
+            - type: 'null'
+            - type: string
+              format: ISO 8601 Date
+              example: 2026-06-24
+        rewatch_count:
+          type: number
+        private:
+          type: boolean
+        note:
+          type: string
+
+    EpisodeSummary:
+      type: object
+      required: [ id, title, duration, number, thumbnail ]
+      properties:
+        id:
+          type: string
+          format: UUID
+        title:
+          type: [ string, 'null' ]
+        duration:
+          type: [ number, 'null' ]
+          description: Duration of the episode in seconds.
+        number:
+          type: number
+          format: double
+        thumbnail:
+          type: [ string, 'null' ]
+    Media:
+      type: object
+      required:
+        - id
+        - banner
+        - cover
+        - title
+        - progress
+        - total
+        - status
+      properties:
+        id:
+          type: number
+        banner:
+          type:
+            - string
+            - "null"
+        cover:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [ thumbnail, original ]
+              properties:
+                thumbnail:
+                  type: string
+                original:
+                  type: string
+        title:
+          type: string
+        progress:
+          type:
+            - number
+            - "null"
+        total:
+          type:
+            - number
+            - "null"
+          description: Total number of episodes
+        status:
+          oneOf:
+            - $ref: "#/components/schemas/MediaStatus"
+            - type: "null"
+        episodes:
+          type: array
+          items:
+            type:
+              $ref: "#/components/schemas/EpisodeSummary"
+        description:
+          type: [ string, 'null' ]
+        genres:
+          type: array
+          items:
+            type: string
+    EpisodeChapter:
+      type: object
+      required: [ start, name ]
+      properties:
+        start:
+          type: number
+          description: Start timestamp of the chapter in milliseconds.
+        name:
+          type: string
+    ProcessingStatus:
+      type: string
+      enum: [ "QUEUED", "PROCESSING", "READY" ]
+    Episode:
+      type: object
+      required:
+        - id
+        - title
+        - duration
+        - number
+        - thumbnail
+        - media
+        - chapters
+        - url
+        - status
+      properties:
+        id:
+          type: string
+          format: UUID
+        title:
+          type: [ string, 'null' ]
+        duration:
+          type: [ number, 'null' ]
+          description: Duration of the episode in seconds.
+        number:
+          type: number
+          format: double
+        thumbnail:
+          type: [ string, 'null' ]
+        media:
+          $ref: "#/components/schemas/MediaSummary"
+        chapters:
+          type: array
+          items:
+            $ref: "#/components/schemas/EpisodeChapter"
+        url:
+          type: [ string, 'null' ]
+          description: HLS Playlist url (should include domain as well, Local IP address specifically)
+        status:
+          $ref: "#/components/schemas/ProcessingStatus"
+    ProcessingStep:
+      type: string
+      enum:
+        - "IN_QUEUE"
+        - "PROCESSING_1080P"
+        - "PROCESSING_720P"
+        - "PROCESSING_AUDIO"
+        - "PROCESSING_SUBTITLES"
+        - "PACKAGING"
+        - "DONE"
+    QueueItem:
+      type: object
+      required: [ id, step, progress, episode ]
+      properties:
+        id:
+          type: string
+          format: UUID
+        step:
+          $ref: "#/components/schemas/ProcessingStep"
+        progress:
+          description: A null indicates the current step doesn't have a progress.
+          oneOf:
+            - type: integer
+              format: float
+              description: A value between 0 and 1 indicating current step progress.
+            - type: 'null'
+        episode:
+          $ref: "#/components/schemas/EpisodeSummary"
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalServerError:
+      description: Internal Server Error occurred (500)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

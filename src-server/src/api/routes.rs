@@ -3,9 +3,11 @@ use crate::api::server::ServerState;
 use axum::Router;
 use axum::routing::{get, post};
 use std::sync::Arc;
+use crate::api::auth::create_auth_router;
 
 pub fn create_router(state: Arc<ServerState>) -> Router {
     Router::new()
+        .nest("/auth", create_auth_router(state.clone()))
         .route("/authenticate", get(authenticate))
         .route("/login", get(login))
         .route("/user/me", get(profile))
@@ -18,4 +20,5 @@ pub fn create_router(state: Arc<ServerState>) -> Router {
             get(get_media_details),
         )
         .with_state(state)
+        
 }
