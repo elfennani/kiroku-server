@@ -1,12 +1,17 @@
-use crate::api::payloads::{AuthenticateParams, ErrorResponse};
+use crate::api::auth::payloads::AuthenticateParams;
+use crate::api::payloads::ErrorResponse;
 use crate::api::server::ServerState;
+use crate::infrastructure::anilist::client::AnilistClient;
+use crate::infrastructure::anilist::queries::viewer::ViewerQuery;
 use axum::extract::rejection::QueryRejection;
 use axum::extract::{ConnectInfo, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use cynic::{GraphQlResponse, QueryBuilder};
 use log::{error, info, warn};
+use reqwest::Response;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -103,10 +108,46 @@ async fn authenticate(
             )
         })?;
 
+        // Fetch user ID
+        let client = AnilistClient::new(data.access_token.as_str());
+        let query = ViewerQuery::build(());
+        let response = client.post(&query).await.map_err(|err| {
+            error!("Unexpected error: {:?}", err);
+
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new("Something went wrong.")),
+            )
+        })?;
+
+        let user_id = match response.json::<GraphQlResponse<ViewerQuery>>().await {
+            Ok(data) => match data.data {
+                None => {
+                    error!("Viewer data empty");
+
+                    return Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ErrorResponse::new("Something went wrong.")),
+                    ));
+                }
+                Some(viewer) => viewer.viewer.unwrap().id,
+            },
+            Err(err) => {
+                error!("Unexpected error: {:?}", err);
+
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse::new("Something went wrong.")),
+                ));
+            }
+        };
+
         state
             .session_repository
-            .save_access_token(data.access_token)
+            .save_access_token(data.access_token, user_id as u32)
+            .await
             .map_err(|e| {
+                error!("Failed to save access token: {}", e);
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse::new("Failed to save access token")),
@@ -141,6 +182,7 @@ async fn login(
     if state
         .session_repository
         .get_access_token()
+        .await
         .is_ok_and(|s| s.is_some())
     {
         return Err((

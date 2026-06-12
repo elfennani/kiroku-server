@@ -28,8 +28,8 @@ impl AppError {
     }
 }
 
-impl From<rusqlite::Error> for AppError {
-    fn from(value: rusqlite::Error) -> Self {
+impl From<sqlx::Error> for AppError {
+    fn from(value: sqlx::Error) -> Self {
         AppError::InternalServer(value.to_string())
     }
 }

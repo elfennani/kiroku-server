@@ -7,7 +7,7 @@ struct UserAvatar {
 
 #[derive(cynic::QueryFragment)]
 pub struct User {
-    id: i32,
+    pub id: i32,
     name: String,
     avatar: Option<UserAvatar>,
     banner_image: Option<String>,

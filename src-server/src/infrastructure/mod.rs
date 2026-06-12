@@ -1,7 +1,8 @@
-pub mod database;
+// pub mod database;
 pub mod session;
-pub mod user;
+// pub mod user;
 pub mod anilist;
 
 pub mod packager;
-pub mod media_processor;
+pub mod database;
+// pub mod media_processor;

@@ -12,6 +12,12 @@ pub struct User {
     pub description: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Session {
+    pub access_token: String,
+    pub user_id: i64,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum MediaStatus {
@@ -63,6 +69,14 @@ pub struct Media {
     pub status: Option<MediaStatus>,
     pub genres: Vec<String>,
     pub episodes: Vec<EpisodeSummary>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ProcessingStatusV2 {
+    Queued,
+    Processing,
+    Ready,
 }
 
 impl Media {

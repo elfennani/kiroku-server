@@ -1,6 +1,6 @@
 use crate::api::payloads::{DataResponse, ErrorResponse};
 use crate::api::server::{AppRouter, RouterState, ServerState};
-use crate::domain::models::MediaSummary;
+use crate::domain::models::{MediaSummary, Session};
 use crate::infrastructure::anilist::client::AnilistClient;
 use crate::infrastructure::anilist::queries::ongoing::{OngoingQuery, OngoingQueryParams};
 use axum::extract::State;
@@ -22,44 +22,20 @@ type MediaSummaryList = (http::StatusCode, Json<DataResponse<Vec<MediaSummary>>>
 pub async fn get_current_media(
     State(state): State<RouterState>,
 ) -> Result<MediaSummaryList, (http::StatusCode, Json<ErrorResponse>)> {
-    let user = match state.user_repository.get_viewer_user().map_err(|err| {
-        error!("get_current_media error: {}", err);
-        (
-            http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new("Failed to retrieve session")),
-        )
-    })? {
+    let session = match state.session_repository.get_access_token().await? {
         None => {
             return Err((
                 http::StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse::new(
-                    "User data not found, try to fetch user details first.",
-                )),
+                Json(ErrorResponse::new("Not logged in!")),
             ));
         }
-        Some(user) => user,
-    };
-
-    let access_token = match state.session_repository.get_access_token().map_err(|err| {
-        error!("retrieving access token error: {}", err);
-        (
-            http::StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new("Failed to retrieve session")),
-        )
-    })? {
-        None => {
-            return Err((
-                http::StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse::new("Session not found!")),
-            ));
-        }
-        Some(token) => token,
+        Some(session) => session,
     };
 
     let request_body = OngoingQuery::build(OngoingQueryParams {
-        user_id: user.id.into(),
+        user_id: session.user_id.try_into().unwrap(),
     });
-    let client = AnilistClient::new(access_token.as_str());
+    let client = AnilistClient::new(session.access_token.as_str());
     let response = client.post(&request_body).await.map_err(|err| {
         error!("Error sending request {}", err);
         (
