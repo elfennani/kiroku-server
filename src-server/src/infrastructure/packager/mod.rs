@@ -1,5 +1,5 @@
 pub mod metadata;
-pub mod service;
+// pub mod service;
 
 use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};

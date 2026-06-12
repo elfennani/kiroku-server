@@ -1,56 +1,39 @@
-use crate::domain::traits::SessionRepository;
-use crate::errors::AppError;
-use crate::infrastructure::database::Database;
-use crate::infrastructure::database::table::Session;
+use crate::domain::models::Session;
+use crate::infrastructure::database::connection::Database;
 use crate::prelude::*;
-use rusqlite::params;
 use std::sync::Arc;
 
-pub struct SessionRepositoryImpl {
+pub struct SessionRepository {
     db: Arc<Database>,
 }
 
-impl SessionRepositoryImpl {
+impl SessionRepository {
     pub fn new(db: Arc<Database>) -> Self {
-        SessionRepositoryImpl { db }
+        SessionRepository { db }
     }
 }
 
-impl SessionRepository for SessionRepositoryImpl {
-    fn get_access_token(&self) -> Result<Option<String>> {
-        let conn = self.db.connection.lock().unwrap();
-        let mut stmt = conn.prepare(
-            // language=sqlite
-            "SELECT id,token FROM sessions",
-        )?;
+impl SessionRepository {
+    pub async fn get_access_token(&self) -> Result<Option<Session>> {
+        let mut conn = self.db.conn.lock().await;
 
-        let result = stmt.query_one((), |row| {
-            Ok(Session {
-                id: row.get(0)?,
-                access_token: row.get(1)?,
-            })
-        });
+        let result: Option<Session> =
+            sqlx::query_as!(Session, "SELECT user_id, token as access_token FROM sessions")
+                .fetch_optional(&mut *conn)
+                .await?;
 
-        if let Err(rusqlite::Error::QueryReturnedNoRows) = result {
-            Ok(None)
-        } else {
-            result
-                .map_err(AppError::from)
-                .map(|session| Some(session.access_token))
-        }
+        Ok(result)
     }
 
-    fn save_access_token(&self, access_token: String) -> Result<()> {
-        self.db
-            .connection
-            .lock()
-            .unwrap()
-            .execute(
-                // language=sqlite
-                "INSERT OR REPLACE INTO sessions (id, token) VALUES (1, ?)",
-                params![access_token],
-            )
-            .map_err(|e| AppError::InternalServer(e.to_string()))?;
+    pub async fn save_access_token(&self, access_token: String, user_id: u32) -> Result<()> {
+        let mut conn = self.db.conn.lock().await;
+        sqlx::query!(
+            "INSERT INTO sessions (id, token, user_id) VALUES (1, ?, ?)",
+            access_token,
+            user_id
+        )
+        .execute(&mut *conn)
+        .await?;
 
         Ok(())
     }
