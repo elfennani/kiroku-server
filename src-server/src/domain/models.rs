@@ -13,19 +13,13 @@ pub struct User {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Image {
-    pub thumbnail: String,
-    pub url: String,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Status {
+pub enum MediaStatus {
     Completed,
     Planned,
+    #[serde(rename = "PENDING")]
     Current,
+    #[serde(rename = "REPEATING")]
     Revisiting,
     Dropped,
     Paused,
@@ -40,21 +34,50 @@ pub enum MediaType {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct MediaStatus {
-    pub status: Option<Status>,
-    pub progress: Option<i32>,
-    pub total: Option<i32>,
+pub struct MediaSummary {
+    pub id: i32,
+    pub banner: Option<String>,
+    pub description: Option<String>,
+    pub cover: Option<String>,
+    pub title: String,
+    pub progress: Option<u32>,
+    pub total: Option<u32>,
+    pub status: Option<MediaStatus>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MediaCover {
+    pub thumbnail: String,
+    pub original: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Media {
     pub id: i32,
+    pub banner: Option<String>,
+    pub cover: Option<MediaCover>,
     pub title: String,
     pub description: Option<String>,
-    pub cover: Option<Image>,
-    pub banner: Option<String>,
-    pub media_type: MediaType,
-    pub status: MediaStatus,
+    pub progress: Option<u32>,
+    pub total: Option<u32>,
+    pub status: Option<MediaStatus>,
+    pub genres: Vec<String>,
+    pub episodes: Vec<EpisodeSummary>,
+}
+
+impl Media {
+    pub fn set_episodes(&mut self, episodes: Vec<EpisodeSummary>) {
+        self.episodes = episodes;
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EpisodeSummary {
+    pub id: Uuid,
+    pub title: Option<String>,
+    pub duration: Option<u32>,
+    pub number: u32,
+    pub thumbnail: Option<String>,
 }
 
 #[derive(Debug)]
@@ -88,21 +111,4 @@ pub struct ProcessedEpisode {
     pub duration: i32,
     pub title: Option<String>,
     pub thumbnail: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MediaDetails {
-    pub id: usize,
-    pub title: String,
-    pub description: Option<String>,
-    pub cover: Option<Image>,
-    pub banner: Option<String>,
-    pub status: MediaStatus,
-    pub episodes: Vec<ProcessedEpisode>,
-}
-
-impl MediaDetails {
-    pub fn set_episodes(&mut self, episodes: Vec<ProcessedEpisode>) {
-        self.episodes = episodes;
-    }
 }

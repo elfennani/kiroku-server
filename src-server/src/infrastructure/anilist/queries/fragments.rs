@@ -1,17 +1,16 @@
-use std::fmt::Display;
 use crate::domain::models;
-use crate::domain::models::Image;
 use crate::errors::AppError;
 use crate::infrastructure::anilist::schema;
+use std::fmt::Display;
 
 #[derive(cynic::QueryFragment)]
 pub struct MediaCoverImage {
-    extra_large: Option<String>,
-    large: Option<String>,
-    medium: Option<String>,
+    pub extra_large: Option<String>,
+    pub large: Option<String>,
+    pub medium: Option<String>,
 }
 
-impl TryFrom<MediaCoverImage> for models::Image {
+impl TryFrom<MediaCoverImage> for models::MediaCover {
     type Error = AppError;
 
     fn try_from(cover: MediaCoverImage) -> Result<Self, Self::Error> {
@@ -20,11 +19,9 @@ impl TryFrom<MediaCoverImage> for models::Image {
                 "Failed to parse cover".to_string(),
             ))
         } else {
-            Ok(Image {
+            Ok(models::MediaCover {
                 thumbnail: cover.large.unwrap(),
-                url: cover.extra_large.unwrap(),
-                width: None,
-                height: None,
+                original: cover.extra_large.unwrap(),
             })
         }
     }
@@ -40,7 +37,7 @@ pub enum MediaListStatus {
     Repeating,
 }
 
-impl From<MediaListStatus> for models::Status {
+impl From<MediaListStatus> for models::MediaStatus {
     fn from(value: MediaListStatus) -> Self {
         match value {
             MediaListStatus::Completed => Self::Completed,

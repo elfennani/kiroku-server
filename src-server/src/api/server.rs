@@ -10,6 +10,7 @@ use axum::Router;
 use log::info;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use std::fmt::format;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::services::ServeDir;
 
@@ -17,7 +18,7 @@ pub struct ServerState {
     pub user_repository: Arc<dyn UserRepository>,
     pub session_repository: Arc<dyn SessionRepository>,
     pub media_processor_repo: Arc<dyn MediaProcessorRepository>,
-    pub client_id: String,
+    pub client_id: i32,
     pub client_secret: String,
     pub packager_service: Arc<PackagerService>,
 }
@@ -27,11 +28,14 @@ pub struct Server {
     mdns_daemon: Arc<ServiceDaemon>,
 }
 
+pub type RouterState = Arc<ServerState>;
+pub type AppRouter = Router<RouterState>;
+
 impl Server {
     pub fn new(
         db: Arc<Database>,
         packager_service: Arc<PackagerService>,
-        client_id: &str,
+        client_id: i32,
         client_secret: &str,
     ) -> Self {
         let mdns = ServiceDaemon::new().expect("Failed to create daemon");
@@ -55,7 +59,8 @@ impl Server {
 
         let app = Router::new()
             .nest("/api", create_router(self.state.clone()))
-            .fallback_service(static_files_service);
+            .fallback_service(static_files_service)
+            .into_make_service_with_connect_info::<SocketAddr>();
 
         let listener = tokio::net::TcpListener::bind("0.0.0.0:8642")
             .await

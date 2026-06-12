@@ -1,10 +1,7 @@
 use crate::domain::models;
-use crate::domain::models::{Image, MediaStatus};
 use crate::errors::AppError;
 use crate::infrastructure::anilist::queries::fragments::*;
 use crate::infrastructure::anilist::schema;
-
-
 
 #[derive(cynic::QueryFragment)]
 struct Media {
@@ -48,7 +45,7 @@ pub struct OngoingQuery {
     pub(crate) collection: Option<MediaListCollection>,
 }
 
-impl TryFrom<MediaList> for models::Media {
+impl TryFrom<MediaList> for models::MediaSummary {
     type Error = AppError;
 
     fn try_from(entry: MediaList) -> Result<Self, Self::Error> {
@@ -56,7 +53,7 @@ impl TryFrom<MediaList> for models::Media {
             .media
             .ok_or(AppError::NotFound("MediaList".to_string()))?;
 
-        Ok(models::Media {
+        Ok(models::MediaSummary {
             id: media
                 .id
                 .try_into()
@@ -65,15 +62,12 @@ impl TryFrom<MediaList> for models::Media {
                 .title
                 .ok_or(AppError::InternalServer("Title not found".to_string()))?
                 .to_string(),
-            cover: media.cover_image.and_then(|cover| cover.try_into().ok()),
+            progress: entry.progress.and_then(|progress| progress.try_into().ok()),
+            cover: media.cover_image.and_then(|cover| cover.large),
             banner: media.banner_image,
             description: media.description,
-            media_type: models::MediaType::Anime,
-            status: MediaStatus {
-                status: entry.status.map(|status| status.into()),
-                progress: entry.progress,
-                total: media.episodes,
-            },
+            status: entry.status.map(|status| status.into()),
+            total: media.episodes.and_then(|episodes| episodes.try_into().ok()),
         })
     }
 }

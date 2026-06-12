@@ -1,6 +1,6 @@
 use crate::api::payloads::{AuthenticateParams, EnqueueVideo};
 use crate::api::server::ServerState;
-use crate::domain::models::{Media, MediaDetails, MediaStatus, MediaType, ProcessedEpisode, User};
+use crate::domain::models::{Media, MediaSummary, MediaType, ProcessedEpisode, User};
 use crate::infrastructure::anilist::client::AnilistClient;
 use crate::infrastructure::anilist::queries::media_details;
 use crate::infrastructure::anilist::queries::media_details::MediaDetailsQueryParams;
@@ -16,6 +16,8 @@ use log::error;
 use reqwest::{StatusCode, header};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::fmt::format;
+use std::ops::Add;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -28,12 +30,13 @@ pub async fn authenticate(
 ) -> Result<impl IntoResponse, http::StatusCode> {
     let client = reqwest::Client::new();
 
+    let client_id = state.client_id.to_string();
     let mut body = HashMap::new();
     body.insert("grant_type", "authorization_code");
-    body.insert("client_id", state.client_id.as_str());
     body.insert("client_secret", state.client_secret.as_str());
     body.insert("redirect_uri", "http://localhost:8642/authenticate");
     body.insert("code", params.code.as_str());
+    body.insert("client_id", client_id.as_str());
 
     let response = client
         .post("https://anilist.co/api/v2/oauth/token")
@@ -164,7 +167,7 @@ pub async fn get_ongoing_media(
             None => Err(http::StatusCode::BAD_REQUEST),
             Some(collections) => {
                 let lists = collections.lists.unwrap();
-                let mut media_list: Vec<Media> = vec![];
+                let mut media_list: Vec<MediaSummary> = vec![];
 
                 for list in lists {
                     let list = list.unwrap();
@@ -205,7 +208,7 @@ pub struct Params {
 pub async fn get_media_details(
     State(state): State<Arc<ServerState>>,
     Path(Params { media_id }): Path<Params>,
-) -> Result<Json<MediaDetails>, http::StatusCode> {
+) -> Result<Json<Media>, http::StatusCode> {
     let processed_eps = state
         .media_processor_repo
         .get_processed_media_by_media_id(media_id)?;
@@ -235,8 +238,8 @@ pub async fn get_media_details(
         None => Err(http::StatusCode::BAD_REQUEST),
         Some(data) => {
             let processed_eps = data.update_processed_episodes_metadata(processed_eps);
-            let mut media: MediaDetails = data.try_into()?;
-            media.set_episodes(processed_eps?);
+            let mut media: Media = data.try_into()?;
+            // media.set_episodes(processed_eps?);
 
             Ok(Json(media))
         }

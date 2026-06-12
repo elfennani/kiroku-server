@@ -5,8 +5,8 @@ use axum::extract::{ConnectInfo, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::{get, post};
-use axum::{Json, Router, http};
-use log::{info, warn};
+use axum::{Json, Router};
+use log::{error, info, warn};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -20,6 +20,8 @@ pub fn create_auth_router(state: Arc<ServerState>) -> Router<Arc<ServerState>> {
         .route("/token", get(authenticate))
         .with_state(state)
 }
+
+const REDIRECT_URI: &str = "http://localhost:8642/api/auth/token";
 
 async fn authenticate(
     query: Result<Query<AuthenticateParams>, QueryRejection>,
@@ -57,11 +59,12 @@ async fn authenticate(
 
     let client = reqwest::Client::new();
 
+    let client_id = state.client_id.to_string();
     let mut body = HashMap::new();
     body.insert("grant_type", "authorization_code");
-    body.insert("client_id", state.client_id.as_str());
+    body.insert("client_id", client_id.as_str());
     body.insert("client_secret", state.client_secret.as_str());
-    body.insert("redirect_uri", "http://localhost:8642/authenticate");
+    body.insert("redirect_uri", REDIRECT_URI);
     body.insert("code", params.code.as_str());
 
     let response = client
@@ -78,7 +81,28 @@ async fn authenticate(
     }
 
     if let Ok(response) = response {
-        let data: ExchangeResponse = response.json().await.unwrap();
+        if (response.status() == StatusCode::BAD_REQUEST) {
+            if let Ok(text) = response.text().await {
+                error!("Got bad request in token exchange: {}", text);
+            }
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new("Something went wrong.")),
+            ));
+        }
+
+        let data: ExchangeResponse = response.json().await.map_err(|err| {
+            error!("Unexpected parsing error: {:?}", err);
+
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new(format!(
+                    "Failed to decode exchange response: {}",
+                    err
+                ))),
+            )
+        })?;
+
         state
             .session_repository
             .save_access_token(data.access_token)
@@ -92,6 +116,7 @@ async fn authenticate(
         info!("Session saved");
         Ok(StatusCode::NO_CONTENT)
     } else {
+        error!("Request failed: {:?}", response.unwrap_err());
         Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse::new("Failed to authenticate")),
@@ -134,7 +159,7 @@ async fn login(
     .unwrap();
 
     url.query_pairs_mut()
-        .append_pair("redirect_uri", "http://localhost:8642/authenticate");
+        .append_pair("redirect_uri", REDIRECT_URI);
 
     println!("Redirecting to {}", url);
     Ok(Redirect::permanent(url.as_str()))

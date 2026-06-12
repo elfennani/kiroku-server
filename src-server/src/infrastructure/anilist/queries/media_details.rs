@@ -1,4 +1,5 @@
-use crate::domain::models::{MediaDetails, MediaStatus, ProcessedEpisode};
+use crate::domain::models;
+use crate::domain::models::ProcessedEpisode;
 use crate::errors::AppError;
 use crate::infrastructure::anilist::queries::fragments::*;
 use crate::infrastructure::anilist::schema;
@@ -27,6 +28,7 @@ pub struct Media {
     cover_image: Option<MediaCoverImage>,
     media_list_entry: Option<MediaList>,
     streaming_episodes: Option<Vec<Option<MediaStreamingEpisode>>>,
+    genres: Option<Vec<Option<String>>>,
 }
 
 #[derive(cynic::QueryVariables)]
@@ -90,32 +92,32 @@ impl MediaDetailsQuery {
     }
 }
 
-impl TryFrom<MediaDetailsQuery> for MediaDetails {
+impl TryFrom<MediaDetailsQuery> for models::Media {
     type Error = AppError;
 
     fn try_from(query: MediaDetailsQuery) -> Result<Self, Self::Error> {
         let media = query
             .media
             .ok_or(AppError::NotFound("Media not found".to_string()))?;
+        let entry = media.media_list_entry;
 
-        Ok(MediaDetails {
+        Ok(models::Media {
             id: media.id.try_into().unwrap(),
+            banner: media.banner_image,
+            cover: media.cover_image.and_then(|cover| cover.try_into().ok()),
             title: media.title.map(|title| title.to_string()).unwrap(),
             description: media.description,
-            cover: media.cover_image.and_then(|cover| cover.try_into().ok()),
-            banner: media.banner_image,
-            status: match media.media_list_entry {
-                Some(entry) => MediaStatus {
-                    status: entry.status.map(|status| status.into()),
-                    progress: entry.progress,
-                    total: media.episodes,
-                },
-                None => MediaStatus {
-                    status: None,
-                    progress: None,
-                    total: media.episodes,
-                },
-            },
+            progress: entry
+                .as_ref()
+                .and_then(|media_list_entry| media_list_entry.progress.map(|p| p as u32)),
+            total: media.episodes.map(|eps| eps.try_into().unwrap()),
+            status: entry.and_then(|mle| mle.status).map(|m| m.into()),
+            genres: media
+                .genres
+                .unwrap_or(vec![])
+                .iter()
+                .filter_map(|g| g.as_ref().and_then(|g| String::try_from(g).ok()))
+                .collect(),
             episodes: vec![],
         })
     }

@@ -1,5 +1,8 @@
+use crate::api::payloads::ErrorResponse;
 use axum::http::StatusCode;
+use axum::{Json, http};
 use std::fmt::Display;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -10,6 +13,19 @@ pub enum AppError {
 
     TranscodeError(String), // Transcoder (ffmpeg) error
     PackagerError(String),  // Shaka packager specific errors
+}
+
+impl AppError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            AppError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            AppError::InternalServer(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::JsonParseError(_) => StatusCode::BAD_REQUEST,
+            AppError::TranscodeError(_) => StatusCode::BAD_REQUEST,
+            AppError::PackagerError(_) => StatusCode::BAD_REQUEST,
+        }
+    }
 }
 
 impl From<rusqlite::Error> for AppError {
@@ -26,14 +42,24 @@ impl From<serde_json::Error> for AppError {
 
 impl From<AppError> for StatusCode {
     fn from(value: AppError) -> Self {
-        match value {
-            AppError::BadRequest(_) => StatusCode::BAD_REQUEST,
-            AppError::NotFound(_) => StatusCode::NOT_FOUND,
-            AppError::InternalServer(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            AppError::JsonParseError(_) => StatusCode::BAD_REQUEST,
-            AppError::TranscodeError(_) => StatusCode::BAD_REQUEST,
-            AppError::PackagerError(_) => StatusCode::BAD_REQUEST,
-        }
+        value.status_code()
+    }
+}
+
+impl From<AppError> for (StatusCode, Json<ErrorResponse>) {
+    fn from(value: AppError) -> Self {
+        let status_code: StatusCode = value.status_code();
+
+        let response = match value {
+            AppError::BadRequest(message) => ErrorResponse::new(message),
+            AppError::NotFound(message) => ErrorResponse::new(message),
+            AppError::InternalServer(message) => ErrorResponse::new(message),
+            AppError::JsonParseError(err) => ErrorResponse::new(err.to_string()),
+            AppError::TranscodeError(message) => ErrorResponse::new(message),
+            AppError::PackagerError(message) => ErrorResponse::new(message),
+        };
+
+        (status_code, Json(response))
     }
 }
 

@@ -60,6 +60,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/MediaSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -262,6 +264,7 @@ components:
         - COMPLETED
         - DROPPED
         - PAUSED
+        - PLANNED
     MediaSummary:
       type: object
       required:

@@ -4,6 +4,7 @@ use directories::ProjectDirs;
 use infrastructure::database::Database;
 use infrastructure::database::migration::Migration;
 use log::info;
+use serde::Deserialize;
 use std::env;
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ mod prelude;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let project_dirs = ProjectDirs::from("com.elfen", "", "kiroku-server").unwrap();
     let args: Vec<String> = env::args().collect();
     let migrations: Vec<Migration> = vec![
@@ -92,6 +94,28 @@ async fn main() -> anyhow::Result<()> {
         )?,
     ];
 
+    let config_file = project_dirs.config_local_dir().join("config.toml");
+
+    if !config_file.exists() {
+        panic!("Config file does not exist {}", config_file.display());
+    }
+
+    #[derive(Deserialize)]
+    struct Config {
+        anilist: AniList,
+    }
+
+    #[derive(Deserialize)]
+    struct AniList {
+        #[serde(rename = "client-id")]
+        client_id: i32,
+        #[serde(rename = "client-secret")]
+        client_secret: String,
+    }
+
+    let config = std::fs::read_to_string(config_file)?;
+    let config = toml::from_str::<Config>(config.as_str())?;
+
     let db = Arc::new(Database::open(
         project_dirs.data_dir().join("./app.db"),
         migrations,
@@ -114,16 +138,14 @@ async fn main() -> anyhow::Result<()> {
         });
     }
 
-    let client_id = args[1].clone();
-    let client_secret = args[2].clone();
-    println!("Client ID: {}", client_id);
-    env_logger::init();
+    let client_id = config.anilist.client_id;
+    let client_secret = config.anilist.client_secret;
 
     info!("Starting Server");
     let app = Server::new(
         db.clone(),
         packager_service.clone(),
-        client_id.as_str(),
+        client_id,
         client_secret.as_str(),
     );
     app.serve().await?;
