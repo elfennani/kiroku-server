@@ -1,5 +1,5 @@
 pub mod metadata;
-// pub mod service;
+pub mod service;
 
 use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
@@ -91,7 +91,10 @@ impl Packager {
         Ok(metadata)
     }
 
-    pub async fn transcode_video(&mut self, resolution: usize) -> Result<PathBuf> {
+    pub async fn transcode_video<F>(&mut self, resolution: usize, on_progress: F) -> Result<PathBuf>
+    where
+        F: Fn(f64) -> (),
+    {
         let output_file = self.output_dir.join(format!("video_{}p.mp4", resolution));
         let metadata = self.get_metadata().await?;
 
@@ -136,16 +139,20 @@ impl Packager {
         let mut lines = reader.lines();
 
         while let Ok(Some(line)) = lines.next_line().await {
+            // ffmpeg has a funny quirk where both `out_time_ms` and `out_time_us` are
+            // reporting the same value in microseconds for some reason.
             if line.starts_with("out_time_ms") {
                 let progress_ms = line.split("=").collect::<Vec<&str>>()[1]
                     .parse::<u64>()
-                    .unwrap();
+                    .unwrap()
+                    / 1000;
                 let percentage = progress_ms as f64 / metadata.duration as f64;
                 info!(
                     "{}p transcode progress: {:.2}%",
                     resolution,
                     percentage * 100.0
                 );
+                on_progress(percentage);
             }
         }
 
@@ -259,6 +266,28 @@ impl Packager {
             .clone()
             .unwrap_or(format!("Track {}", subtitle_stream.index + 1));
         self.streams.insert(format!("in=subtitles_{suffix}.vtt,stream=text,segment_template=text_{suffix}/$Number$.vtt,playlist_name=text_{suffix}/main.m3u8,hls_group_id=text,hls_name={name}", suffix = suffix, name = name));
+
+        Ok(output_file)
+    }
+
+    pub async fn generate_thumbnail(&self) -> Result<PathBuf> {
+        let output_file = self.output_dir.join("thumbnail.jpg");
+
+        // ffmpeg -ss 00:XX:00 -i input.mp4 -vframes 1 -q:v 2 thumbnail.jpg
+        let output = Command::new("ffmpeg")
+            .args([
+                "-ss",
+                &format!("00:{:02}:00", rand::random_range(3..20)),
+                "-i",
+                self.file.to_str().unwrap(),
+                "-vframes",
+                "1",
+                "-q:v",
+                "2",
+                output_file.to_str().unwrap(),
+            ])
+            .output()
+            .await;
 
         Ok(output_file)
     }

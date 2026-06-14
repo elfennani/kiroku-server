@@ -4,6 +4,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
+use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct MediaMetadata {
@@ -93,6 +94,13 @@ impl MediaMetadata {
             Some(filename) => filename.to_owned(),
         };
 
+        let duration = (f32::from_str(data.format.duration.as_str())
+            .map_err(|_err| AppError::InternalServer("Failed to parse duration".to_owned()))?
+            * 1000f32)
+            .round() as u64;
+
+        debug!("duration: {}", duration);
+
         Ok(MediaMetadata {
             title: data
                 .format
@@ -100,11 +108,7 @@ impl MediaMetadata {
                 .get("title")
                 .map(|s| s.to_owned())
                 .unwrap_or(filename),
-            duration: (f32::from_str(data.format.duration.as_str())
-                .map_err(|_err| AppError::InternalServer("Failed to parse duration".to_owned()))?
-                * 1000f32
-                * 1000f32)
-                .round() as u64,
+            duration,
             chapters,
             audio,
             subtitles,

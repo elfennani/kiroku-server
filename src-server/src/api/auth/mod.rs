@@ -11,7 +11,6 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use cynic::{GraphQlResponse, QueryBuilder};
 use log::{error, info, warn};
-use reqwest::Response;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;

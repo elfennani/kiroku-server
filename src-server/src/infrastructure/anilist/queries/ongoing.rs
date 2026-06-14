@@ -65,7 +65,6 @@ impl TryFrom<MediaList> for models::MediaSummary {
             progress: entry.progress.and_then(|progress| progress.try_into().ok()),
             cover: media.cover_image.and_then(|cover| cover.large),
             banner: media.banner_image,
-            description: media.description,
             status: entry.status.map(|status| status.into()),
             total: media.episodes.and_then(|episodes| episodes.try_into().ok()),
         })

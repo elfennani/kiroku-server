@@ -221,23 +221,28 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: object
-                required:
-                  - path
-                  - media_id
-                  - episode
-                properties:
-                  path:
-                    type: string
-                    description: Absolute path of the video file in the host of the server.
-                  media_id:
-                    type: integer
-                  number:
-                    type: integer
-                    format: double
-                    description: Episode number, it has to be double due to the possibility of extra episodes.
+              type: object
+              required: [ media_id, items ]
+              properties:
+                media_id:
+                  type: integer
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - path
+                      - media_id
+                      - episode
+                    properties:
+                      path:
+                        type: string
+                        description: Absolute path of the video file in the host of the server.
+                      number:
+                        type: integer
+                        format: double
+                        description: Episode number, it has to be double due to the possibility of extra episodes.
+
       responses:
         "204":
           description: Episode(s) successfully enqueued.
@@ -329,7 +334,6 @@ components:
           type: boolean
         note:
           type: string
-
     EpisodeSummary:
       type: object
       required: [ id, title, duration, number, thumbnail ]
@@ -451,14 +455,7 @@ components:
           $ref: "#/components/schemas/ProcessingStatus"
     ProcessingStep:
       type: string
-      enum:
-        - "IN_QUEUE"
-        - "PROCESSING_1080P"
-        - "PROCESSING_720P"
-        - "PROCESSING_AUDIO"
-        - "PROCESSING_SUBTITLES"
-        - "PACKAGING"
-        - "DONE"
+      enum: [ "IN_QUEUE", "PROCESSING_1080P", "PROCESSING_720P", "PROCESSING_AUDIO", "PROCESSING_SUBTITLES", "PACKAGING", "DONE" ]
     QueueItem:
       type: object
       required: [ id, step, progress, episode ]

@@ -1,22 +1,24 @@
 use crate::api::routes::create_router;
 use crate::infrastructure::database::connection::Database;
+use crate::infrastructure::episode_repo::EpisodeRepository;
+use crate::infrastructure::media_repo::MediaRepository;
+use crate::infrastructure::packager::service::PackagerService;
 use crate::infrastructure::session::SessionRepository;
 use anyhow::Context;
 use axum::Router;
 use log::info;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
-use std::fmt::format;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::services::ServeDir;
 
 pub struct ServerState {
-    // pub user_repository: Arc<dyn UserRepository>,
     pub session_repository: Arc<SessionRepository>,
-    // pub media_processor_repo: Arc<dyn MediaProcessorRepository>,
+    pub media_repository: Arc<MediaRepository>,
+    pub episode_repository: Arc<EpisodeRepository>,
     pub client_id: i32,
     pub client_secret: String,
-    // pub packager_service: Arc<PackagerService>,
+    pub packager_service: Arc<PackagerService>,
 }
 
 pub struct Server {
@@ -30,7 +32,7 @@ pub type AppRouter = Router<RouterState>;
 impl Server {
     pub fn new(
         db: Arc<Database>,
-        // packager_service: Arc<PackagerService>,
+        packager_service: Arc<PackagerService>,
         client_id: i32,
         client_secret: &str,
     ) -> Self {
@@ -39,11 +41,14 @@ impl Server {
         Self {
             state: Arc::new(ServerState {
                 session_repository: Arc::new(SessionRepository::new(db.clone())),
-                // user_repository: Arc::new(UserRepositoryImpl::new(db.clone())),
-                // media_processor_repo: Arc::new(MediaProcessorRepositoryImpl::new(db.clone())),
+                media_repository: Arc::new(MediaRepository::new(db.clone())),
                 client_id: client_id.to_owned(),
                 client_secret: client_secret.to_owned(),
-                // packager_service,
+                episode_repository: Arc::new(EpisodeRepository::new(
+                    db.clone(),
+                    packager_service.output_dir(),
+                )),
+                packager_service,
             }),
             mdns_daemon: Arc::new(mdns),
         }

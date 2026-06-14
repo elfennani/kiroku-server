@@ -1347,9 +1347,12 @@ dependencies = [
  "local-ip-address",
  "log",
  "mdns-sd",
+ "nanoid",
+ "rand 0.9.4",
  "reqwest",
  "serde",
  "serde_json",
+ "serde_plain",
  "sqlx",
  "thiserror 1.0.69",
  "tokio",
@@ -1540,6 +1543,15 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "nanoid"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8628de41fe064cc3f0cf07f3d299ee3e73521adaff72278731d5c8cae3797873"
+dependencies = [
+ "rand 0.9.4",
 ]
 
 [[package]]
@@ -2215,6 +2227,15 @@ dependencies = [
  "itoa",
  "serde",
  "serde_core",
+]
+
+[[package]]
+name = "serde_plain"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ce1fc6db65a611022b23a0dec6975d63fb80a302cb3388835ff02c097258d50"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

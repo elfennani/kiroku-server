@@ -82,6 +82,14 @@ pub async fn get_current_media(
                     }
                 }
 
+                let media_list_cloned = media_list.clone();
+                
+                tokio::spawn(async move {
+                    if let Err(err) = state.media_repository.cache_media(&media_list_cloned).await {
+                        error!("Error caching media: {}", err);
+                    }
+                });
+
                 Ok((http::StatusCode::OK, Json(DataResponse::new(media_list))))
             }
         },
