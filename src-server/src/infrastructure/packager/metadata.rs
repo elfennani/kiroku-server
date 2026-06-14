@@ -1,10 +1,10 @@
 use crate::errors::AppError;
 use crate::prelude::*;
+use log::debug;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
-use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct MediaMetadata {
@@ -74,8 +74,14 @@ impl MediaMetadata {
         for chapter in data.chapters {
             chapters.push(Chapter {
                 index: chapters.len(),
-                start: chapter.start,
-                end: chapter.end,
+                start: (f32::from_str(chapter.start_time.as_str()).map_err(|_err| {
+                    AppError::InternalServer("Failed to parse start_time".to_owned())
+                })? * 1000f32)
+                    .round() as u64,
+                end: (f32::from_str(chapter.end_time.as_str()).map_err(|_err| {
+                    AppError::InternalServer("Failed to parse end_time".to_owned())
+                })? * 1000f32)
+                    .round() as u64,
                 title: chapter.tags.get("title").map(|s| s.to_owned()),
             })
         }
@@ -133,7 +139,8 @@ struct FfprobeStream {
 #[derive(Deserialize)]
 struct FfprobeChapter {
     start: u64,
-    end: u64,
+    start_time: String,
+    end_time: String,
     tags: HashMap<String, String>,
 }
 

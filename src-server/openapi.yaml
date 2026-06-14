@@ -458,7 +458,7 @@ components:
       enum: [ "IN_QUEUE", "PROCESSING_1080P", "PROCESSING_720P", "PROCESSING_AUDIO", "PROCESSING_SUBTITLES", "PACKAGING", "DONE" ]
     QueueItem:
       type: object
-      required: [ id, step, progress, episode ]
+      required: [ id, step, progress, number, media ]
       properties:
         id:
           type: string
@@ -472,8 +472,11 @@ components:
               format: float
               description: A value between 0 and 1 indicating current step progress.
             - type: 'null'
-        episode:
-          $ref: "#/components/schemas/EpisodeSummary"
+        media:
+          $ref: "#/components/schemas/MediaSummary"
+        number:
+          type: integer
+          description: The number of the episode being processed
 
   responses:
     BadRequest:

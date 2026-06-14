@@ -5,8 +5,8 @@ use crate::infrastructure::packager::metadata::MediaMetadata;
 use crate::prelude::*;
 use log::error;
 use nanoid::nanoid;
-use sqlx::Row;
 use sqlx::sqlite::SqliteRow;
+use sqlx::{Connection, Row};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -164,6 +164,7 @@ impl EpisodeRepository {
         };
 
         let mut conn = self.db.conn.lock().await;
+        let mut tx = conn.begin().await?;
 
         sqlx::query!(
             "INSERT INTO episode (id, media_id, title, duration, number, thumbnail, url) VALUES (?,?,?,?,?,?,?)",
@@ -174,7 +175,20 @@ impl EpisodeRepository {
             queue_item.episode_number,
             thumbnail.to_str(),
             playlist.to_str(),
-        ).execute(&mut *conn).await?;
+        ).execute(&mut *tx).await?;
+
+        for chapter in metadata.chapters {
+            sqlx::query!(
+                "INSERT INTO chapters (episode_id, start_time, name) VALUES (?,?,?)",
+                queue_id.as_ref(),
+                chapter.start as i64,
+                chapter.title
+            )
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
 
         Ok(())
     }

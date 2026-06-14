@@ -22,6 +22,9 @@ async fn queue_episode(
     ConnectInfo(socket): ConnectInfo<SocketAddr>,
     Json(data): Json<EnqueueEpisodesRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<ErrorResponse>)> {
+    // TODO: Prefetch and cache media (return 404 if not found)
+    // TODO: Check whether each episode exists (return 400 if at least one is invalid)
+
     let queue_ids = state
         .episode_repository
         .enqueue(data.media_id, data.items)
