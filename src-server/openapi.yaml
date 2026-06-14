@@ -172,28 +172,6 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /episodes/{id}/playlist.m3u8:
-    summary: Get HLS playlist of the episode
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: nanoID
-    get:
-      tags: [ episodes ]
-      responses:
-        "200":
-          description: HLS Playlist content.
-          content:
-            application/vnd.apple.mpegurl:
-              schema:
-                type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
   /episodes/queue:
     get:
       tags: [ episodes ]

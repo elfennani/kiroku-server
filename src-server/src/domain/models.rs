@@ -1,16 +1,6 @@
-use crate::infrastructure::packager::metadata::MediaMetadata;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use uuid::Uuid;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct User {
-    pub id: i32,
-    pub name: String,
-    pub avatar_url: Option<String>,
-    pub banner_url: Option<String>,
-    pub description: Option<String>,
-}
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Session {
@@ -77,59 +67,20 @@ impl From<Media> for MediaSummary {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ProcessingStatusV2 {
-    Queued,
-    Processing,
-    Ready,
-}
-
 impl Media {
-    pub fn set_episodes(&mut self, episodes: Vec<EpisodeSummary>) {
+    pub fn set_episodes(mut self, episodes: Vec<EpisodeSummary>) -> Media {
         self.episodes = episodes;
+
+        self
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EpisodeSummary {
-    pub id: Uuid,
+    pub id: String,
     pub title: Option<String>,
-    pub duration: Option<u32>,
-    pub number: u32,
-    pub thumbnail: Option<String>,
-}
-
-#[derive(Debug)]
-pub enum ProcessingStatus {
-    Queued,
-    Processing,
-    Done,
-}
-
-#[derive(Debug)]
-pub struct ProcessingQueueItem {
-    pub id: Uuid,
-    pub status: ProcessingStatus,
-    pub path: PathBuf,
-    pub playlist_path: Option<PathBuf>,
-    pub metadata: MediaMetadata,
-    pub processed_files: Vec<PathBuf>,
-    pub input_file: PathBuf,
-}
-
-pub enum ProcessedFileType {
-    Audio,
-    Subtitle,
-    Video,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ProcessedEpisode {
-    pub id: Uuid,
-    pub episode: f32,
-    pub duration: i32,
-    pub title: Option<String>,
+    pub duration: u32,
+    pub number: f64,
     pub thumbnail: Option<String>,
 }
 
@@ -194,8 +145,28 @@ pub struct Episode {
 }
 
 impl Episode {
-    fn update_url(&mut self, url: String) {
-        self.url = url;
+    pub fn use_server_urls(mut self) -> Self {
+        self.url = format!(
+            "/files/{}/{}",
+            self.id,
+            PathBuf::from_str(&self.url)
+                .unwrap()
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+        );
+
+        self.thumbnail = Some(format!("/files/{}/thumbnail.jpg", self.id));
+
+        self
+    }
+}
+
+impl EpisodeSummary {
+    pub fn use_server_urls(mut self) -> Self {
+        self.thumbnail = Some(format!("/files/{}/thumbnail.jpg", self.id));
+        self
     }
 }
 

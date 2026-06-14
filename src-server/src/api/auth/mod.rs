@@ -7,7 +7,7 @@ use axum::extract::rejection::QueryRejection;
 use axum::extract::{ConnectInfo, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
-use axum::routing::{get, post};
+use axum::routing::{get};
 use axum::{Json, Router};
 use cynic::{GraphQlResponse, QueryBuilder};
 use log::{error, info, warn};
@@ -32,7 +32,7 @@ async fn authenticate(
     State(state): State<Arc<ServerState>>,
     ConnectInfo(socket): ConnectInfo<SocketAddr>,
 ) -> Result<impl IntoResponse, impl IntoResponse> {
-    if (!socket.ip().is_loopback()) {
+    if !socket.ip().is_loopback() {
         warn!("Request must be made through the host device.");
         return Err((
             StatusCode::UNAUTHORIZED,
@@ -85,7 +85,7 @@ async fn authenticate(
     }
 
     if let Ok(response) = response {
-        if (response.status() == StatusCode::BAD_REQUEST) {
+        if response.status() == StatusCode::BAD_REQUEST {
             if let Ok(text) = response.text().await {
                 error!("Got bad request in token exchange: {}", text);
             }
@@ -168,7 +168,7 @@ async fn login(
     State(state): State<Arc<ServerState>>,
     ConnectInfo(socket): ConnectInfo<SocketAddr>,
 ) -> Result<Redirect, impl IntoResponse> {
-    if (!socket.ip().is_loopback()) {
+    if !socket.ip().is_loopback() {
         warn!("Request must be made through the host device.");
         return Err((
             StatusCode::UNAUTHORIZED,

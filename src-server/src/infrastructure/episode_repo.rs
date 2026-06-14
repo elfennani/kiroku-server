@@ -1,5 +1,6 @@
 use crate::domain::models::{
-    Chapter, EnqueueData, Episode, EpisodeQueueItem, MediaStatus, MediaSummary, ProcessingStep,
+    Chapter, EnqueueData, Episode, EpisodeQueueItem, EpisodeSummary, MediaStatus, MediaSummary,
+    ProcessingStep,
 };
 use crate::errors::AppError;
 use crate::infrastructure::database::connection::Database;
@@ -14,14 +15,14 @@ use std::sync::Arc;
 
 pub struct EpisodeRepository {
     db: Arc<Database>,
-    output_dir: PathBuf,
+    app_data_dir: PathBuf,
 }
 
 impl EpisodeRepository {
     pub fn new(db: Arc<Database>, output_dir: impl AsRef<Path>) -> EpisodeRepository {
         Self {
             db,
-            output_dir: output_dir.as_ref().to_path_buf(),
+            app_data_dir: output_dir.as_ref().to_path_buf(),
         }
     }
 
@@ -31,7 +32,7 @@ impl EpisodeRepository {
 
         for episode in episodes {
             let id = nanoid!(10);
-            let dir = self.output_dir.join(&id);
+            let dir = self.app_data_dir.join(&id);
             std::fs::create_dir_all(&dir).map_err(|err| {
                 error!(
                     "Failed to create episode directory {}: {}",
@@ -254,5 +255,22 @@ impl EpisodeRepository {
                 .fetch_optional(&mut *conn)
                 .await?,
         )
+    }
+
+    pub async fn get_episodes_by_media_id(&self, media_id: i64) -> Result<Vec<EpisodeSummary>> {
+        let mut conn = self.db.conn.lock().await;
+
+        let episodes = sqlx::query!("SELECT * FROM episode WHERE media_id=?", media_id)
+            .map(|row| EpisodeSummary {
+                id: row.id.clone(),
+                title: row.title,
+                duration: row.duration.unwrap() as u32,
+                number: row.number,
+                thumbnail: row.thumbnail,
+            })
+            .fetch_all(&mut *conn)
+            .await?;
+
+        Ok(episodes)
     }
 }

@@ -21,14 +21,14 @@ pub struct ViewerQuery {
     pub viewer: Option<User>,
 }
 
-impl From<User> for crate::domain::models::User {
-    fn from(user: User) -> Self {
-        crate::domain::models::User {
-            id: user.id,
-            name: user.name,
-            avatar_url: user.avatar.and_then(|avatar| avatar.large),
-            banner_url: user.banner_image,
-            description: user.about,
-        }
-    }
-}
+// impl From<User> for crate::domain::models::User {
+//     fn from(user: User) -> Self {
+//         crate::domain::models::User {
+//             id: user.id,
+//             name: user.name,
+//             avatar_url: user.avatar.and_then(|avatar| avatar.large),
+//             banner_url: user.banner_image,
+//             description: user.about,
+//         }
+//     }
+// }

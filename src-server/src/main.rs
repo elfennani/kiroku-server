@@ -4,7 +4,6 @@ use crate::infrastructure::database::connection::Database;
 use crate::infrastructure::packager::service::PackagerService;
 use directories::ProjectDirs;
 use log::info;
-use serde::Deserialize;
 use std::env;
 use std::sync::Arc;
 

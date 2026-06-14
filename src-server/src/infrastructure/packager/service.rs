@@ -1,4 +1,4 @@
-use crate::domain::models::{EpisodeQueueItem, ProcessingStatus, ProcessingStep};
+use crate::domain::models::ProcessingStep;
 use crate::errors::AppError;
 use crate::infrastructure::database::connection::Database;
 use crate::infrastructure::episode_repo::EpisodeRepository;
@@ -13,18 +13,18 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub struct PackagerService {
     episode_repository: Arc<EpisodeRepository>,
-    output_dir: PathBuf,
+    app_data_dir: PathBuf,
     tx: UnboundedSender<String>,
     rx: Arc<Mutex<UnboundedReceiver<String>>>,
 }
 
 impl PackagerService {
-    pub fn new(db: Arc<Database>, output_dir: impl AsRef<Path>) -> PackagerService {
-        let output_dir = output_dir.as_ref();
+    pub fn new(db: Arc<Database>, app_data_dir: impl AsRef<Path>) -> PackagerService {
+        let output_dir = app_data_dir.as_ref();
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
         Self {
-            output_dir: output_dir.to_owned(),
+            app_data_dir: output_dir.to_owned(),
             tx,
             rx: Arc::new(Mutex::new(rx)),
             episode_repository: Arc::new(EpisodeRepository::new(db.clone(), output_dir)),
@@ -46,8 +46,8 @@ impl PackagerService {
         Ok(())
     }
 
-    pub fn output_dir(&self) -> &Path {
-        &self.output_dir
+    pub fn app_data_dir(&self) -> &Path {
+        &self.app_data_dir
     }
 
     pub async fn start(&self) -> Result<()> {

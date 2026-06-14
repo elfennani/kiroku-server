@@ -6,7 +6,7 @@ use crate::infrastructure::packager::service::PackagerService;
 use crate::infrastructure::session::SessionRepository;
 use anyhow::Context;
 use axum::Router;
-use log::info;
+use log::{debug, info};
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -46,7 +46,7 @@ impl Server {
                 client_secret: client_secret.to_owned(),
                 episode_repository: Arc::new(EpisodeRepository::new(
                     db.clone(),
-                    packager_service.output_dir(),
+                    packager_service.app_data_dir(),
                 )),
                 packager_service,
             }),
@@ -58,8 +58,16 @@ impl Server {
         let static_files_service = ServeDir::new("dist")
             .not_found_service(tower_http::services::ServeFile::new("dist/index.html"));
 
+        debug!(
+            "serving assests from {}",
+            self.state.packager_service.app_data_dir().to_str().unwrap()
+        );
         let app = Router::new()
             .nest("/api", create_router(self.state.clone()))
+            .nest_service(
+                "/files",
+                ServeDir::new(self.state.packager_service.app_data_dir()),
+            )
             .fallback_service(static_files_service)
             .into_make_service_with_connect_info::<SocketAddr>();
 

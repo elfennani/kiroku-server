@@ -5,13 +5,10 @@ use crate::api::payloads::{DataResponse, ErrorResponse};
 use crate::api::server::ServerState;
 use crate::domain::models::Episode;
 use crate::errors::AppError;
-use axum::body::Body;
 use axum::extract::{ConnectInfo, Path, State};
-use axum::http::{HeaderMap, Response};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use axum::{Json, Router, http};
-use local_ip_address::local_ip;
+use axum::{Json, Router};
 use log::debug;
 use reqwest::StatusCode;
 use std::net::SocketAddr;
@@ -22,8 +19,6 @@ pub fn create_episode_router(state: Arc<ServerState>) -> Router<Arc<ServerState>
         .route("/queue", post(queue_episode))
         .route("/queue", get(get_queue))
         .route("/{id}", get(get_episode_details))
-        .route("/{id}/playlist.m3u8", get(get_episode_playlist))
-        .route("/{id}/{*path}", get(get_episode_playlist_file))
         .with_state(state)
 }
 
@@ -80,43 +75,6 @@ async fn get_episode_details(
         Some(episode) => episode,
         None => return Err(AppError::NotFound("Episode not found!".to_string()).into()),
     };
-    let local_ip =
-        local_ip().map_err(|_| AppError::InternalServer("Failed to get local ip".to_string()))?;
 
-    Ok(Json(DataResponse::new(Episode {
-        url: format!("http://{}:8642/api/episodes/{}/playlist.m3u8", local_ip, id),
-        ..episode
-    })))
-}
-
-async fn get_episode_playlist(
-    Path(id): Path<String>,
-    State(state): State<Arc<ServerState>>,
-) -> Result<(HeaderMap, Body), (StatusCode, Json<ErrorResponse>)> {
-    let episode = match state.episode_repository.get_episode_by_id(&id).await? {
-        Some(episode) => episode,
-        None => return Err(AppError::NotFound("Episode not found!".to_string()).into()),
-    };
-
-    let content = std::fs::read_to_string(episode.url)
-        .map_err(|_| AppError::NotFound("Episode file not found!".to_string()))?;
-
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        "Content-Type",
-        "application/vnd.apple.mpegurl".parse().unwrap(),
-    );
-
-    Ok((headers, Body::from(content)))
-}
-
-async fn get_episode_playlist_file(
-    Path((id, path)): Path<(String, String)>,
-    State(state): State<Arc<ServerState>>,
-) -> Result<Body, StatusCode> {
-    let file = state.packager_service.output_dir().join(id).join(path);
-    let content = std::fs::read_to_string(file)
-        .map_err(|_| AppError::NotFound("Episode file not found!".to_string()))?;
-
-    Ok(Body::from(content))
+    Ok(Json(DataResponse::new(episode.use_server_urls())))
 }
