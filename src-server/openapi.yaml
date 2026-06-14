@@ -374,8 +374,7 @@ components:
         episodes:
           type: array
           items:
-            type:
-              $ref: "#/components/schemas/EpisodeSummary"
+            $ref: "#/components/schemas/EpisodeSummary"
         description:
           type: [ string, 'null' ]
         genres:

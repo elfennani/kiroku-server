@@ -21,6 +21,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      "/files": {
+        target: "http://kiroku.local:8642/files",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/files/, ""),
+      }
     },
   },
   resolve: {

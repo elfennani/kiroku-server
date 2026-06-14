@@ -6,11 +6,20 @@ import {
   LucideTriangleAlert,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
-import useMediaQuery from "@/api/processed.query.ts";
+import $api from "@/api/api-client.ts";
 
 const MediaRoute = () => {
   const { id } = useParams();
-  const { data, isPending, isError, error } = useMediaQuery(Number(id));
+  const { data, isPending, isError, error } = $api.useQuery(
+    "get",
+    "/media/{id}",
+    {
+      params: {
+        path: { id: Number(id) },
+      },
+    },
+    { select: ({ data }) => data },
+  );
 
   if (isPending) {
     return (
@@ -82,16 +91,16 @@ const MediaRoute = () => {
           <h3 className="text-sm font-medium uppercase text-secondary-foreground tracking-wider mb-2 mx-4 lg:mx-8">
             Episodes
           </h3>
-          {data.episodes.map((media) => (
+          {data.episodes?.map((episode) => (
             <Link
-              to={`/episode/${media.id}`}
-              key={media.id}
+              to={`/episode/${episode.id}`}
+              key={episode.id}
               className="flex px-4 lg:px-8 py-2 group gap-4 items-center cursor-pointer hover:bg-secondary-foreground/10"
             >
               <div className="w-24 md:w-32 aspect-video bg-secondary flex items-center justify-center text-secondary-foreground">
-                {media.thumbnail ? (
+                {episode.thumbnail ? (
                   <img
-                    src={media.thumbnail}
+                    src={episode.thumbnail}
                     alt=""
                     className="size-full object-contain"
                   />
@@ -101,10 +110,10 @@ const MediaRoute = () => {
               </div>
               <div className="flex flex-col flex-1">
                 <h2 className="font-medium group-hover:underline underline-offset-4 max-md:text-sm">
-                  {media.title ?? <>Episode {media.episode}</>}
+                  {episode.title ?? <>Episode {episode.number}</>}
                 </h2>
                 <p className="text-secondary-foreground text-xs md:text-sm">
-                  {Math.round(media.duration / (1000 * 1000 * 60))} mins
+                  {Math.round(episode.duration!! / (1000 * 60))} mins
                 </p>
               </div>
               <LucideArrowRight className="max-md:size-4" />

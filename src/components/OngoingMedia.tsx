@@ -1,10 +1,15 @@
-import useOngoingMediaQuery from "@/api/ongoing.query.ts";
 import { LucideLoader2, LucideTriangleAlert } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 import { Link } from "react-router";
+import $api from "@/api/api-client.ts";
 
 const OngoingMedia = () => {
-  const { data, isPending, isError, error } = useOngoingMediaQuery();
+  const { data, isPending, isError, error } = $api.useQuery(
+    "get",
+    "/media",
+    {},
+    { select: (data) => data.data },
+  );
 
   if (isPending) {
     return (
@@ -38,13 +43,13 @@ const OngoingMedia = () => {
         >
           <img
             className="w-24 aspect-[0.69] object-cover"
-            src={medium.cover?.thumbnail}
+            src={medium.cover ?? ""}
             alt={medium.title}
           />
           <div className="py-2 flex flex-col justify-between flex-1">
             <div>
               <span className="text-sm text-secondary-foreground font-semibold tracking-wide">
-                {medium.status.status}
+                {medium.status}
               </span>
               <h2 className="text-lg line-clamp-2 group-hover:underline underline-offset-4">
                 {medium.title}
@@ -55,16 +60,16 @@ const OngoingMedia = () => {
                 <span>Progress</span>
                 <span>
                   <span className="text-xl font-bold text-foreground mr-0.5">
-                    {medium.status.progress}
+                    {medium.progress}
                   </span>
-                  /{medium.status.total}
+                  /{medium.total}
                 </span>
               </div>
               <div className="bg-primary-foreground h-1">
                 <div
                   className="bg-primary h-full relative after:absolute after:inset-0 after:bg-primary after:blur-md"
                   style={{
-                    width: `${((medium.status.progress ?? 0) / (medium.status.total ?? 1)) * 100}%`,
+                    width: `${((medium.progress ?? 0) / (medium.total ?? 1)) * 100}%`,
                   }}
                 />
               </div>

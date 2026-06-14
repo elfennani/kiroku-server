@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import Hls from "hls.js";
+// @ts-ignore
 import Plyr from "plyr";
 import "plyr/dist/plyr.css";
 import {
@@ -9,6 +10,8 @@ import {
   LucideTriangleAlert,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
+import $api from "@/api/api-client.ts";
+import type { components } from "@/api/schema";
 
 type AudioTrackOption = {
   index: number;
@@ -34,8 +37,50 @@ const playerOptions = {
   settings: ["captions", "quality", "speed"],
 };
 
+type Episode = components["schemas"]["Episode"];
+
 const EpisodePlayerRoute = () => {
   const { episodeId } = useParams();
+  const { data, isPending, isError, error } = $api.useQuery(
+    "get",
+    "/episodes/{id}",
+    {
+      params: {
+        path: {
+          id: episodeId!!,
+        },
+      },
+    },
+    { select: ({ data }) => data },
+  );
+
+  if (isPending) {
+    return (
+      <Layout>
+        <div className="w-full flex items-center justify-center h-64">
+          <LucideLoader2 className="animate-spin" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Layout>
+        <Alert>
+          <LucideTriangleAlert />
+          <AlertTitle>Failed to fetch processed media!</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      </Layout>
+    );
+  }
+
+  return <EpisodePlayer episode={data} />;
+};
+
+const EpisodePlayer = ({ episode }: { episode: Episode }) => {
+  // const { episodeId } = useParams();
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,16 +89,8 @@ const EpisodePlayerRoute = () => {
   const [selectedAudioTrack, setSelectedAudioTrack] = useState(0);
   const [isNativeAudioSupported, setIsNativeAudioSupported] = useState(false);
 
-  const source = useMemo(() => {
-    if (!episodeId) {
-      return "";
-    }
-
-    return `/api/episode/${encodeURIComponent(episodeId)}/files/playlist.m3u8`;
-  }, [episodeId]);
-
   useEffect(() => {
-    if (!episodeId || !videoRef.current) {
+    if (!videoRef.current) {
       return;
     }
 
@@ -110,7 +147,7 @@ const EpisodePlayerRoute = () => {
       hls = new Hls();
       hlsRef.current = hls;
       const currentHls = hls;
-      hls.loadSource(source);
+      hls.loadSource(episode.url);
       hls.attachMedia(video);
 
       currentHls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -148,7 +185,10 @@ const EpisodePlayerRoute = () => {
 
         currentHls.subtitleTrack = 0;
         updateAudioTracksFromHls();
-        currentHls.on(Hls.Events.AUDIO_TRACKS_UPDATED, updateAudioTracksFromHls);
+        currentHls.on(
+          Hls.Events.AUDIO_TRACKS_UPDATED,
+          updateAudioTracksFromHls,
+        );
         setIsLoading(false);
       });
 
@@ -159,7 +199,7 @@ const EpisodePlayerRoute = () => {
       });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       setIsNativeAudioSupported(true);
-      video.src = source;
+      video.src = episode.url;
       player = new Plyr(video, playerOptions);
 
       const handleLoadedMetadata = () => {
@@ -171,7 +211,9 @@ const EpisodePlayerRoute = () => {
 
       video.addEventListener("loadedmetadata", handleLoadedMetadata);
       video.addEventListener("error", handleError);
-      nativeCleanup.push(() => video.removeEventListener("loadedmetadata", handleLoadedMetadata));
+      nativeCleanup.push(() =>
+        video.removeEventListener("loadedmetadata", handleLoadedMetadata),
+      );
       nativeCleanup.push(() => video.removeEventListener("error", handleError));
     } else {
       fail("This browser does not support HLS playback.");
@@ -184,19 +226,7 @@ const EpisodePlayerRoute = () => {
       player?.destroy();
       nativeCleanup.forEach((cleanup) => cleanup());
     };
-  }, [episodeId, source]);
-
-  if (!episodeId) {
-    return (
-      <Layout>
-        <Alert>
-          <LucideTriangleAlert />
-          <AlertTitle>Missing episode id</AlertTitle>
-          <AlertDescription>The player needs an episode id to load.</AlertDescription>
-        </Alert>
-      </Layout>
-    );
-  }
+  }, [episode]);
 
   if (error) {
     return (
@@ -213,16 +243,26 @@ const EpisodePlayerRoute = () => {
   return (
     <Layout>
       <div className="flex items-center gap-3 text-secondary-foreground">
-        <Link to="/" className="inline-flex items-center gap-2 hover:text-foreground">
+        <Link
+          to={`/media/${episode.media.id}`}
+          className="inline-flex items-center gap-2 hover:text-foreground"
+        >
           <LucideArrowLeft className="size-4" />
-          Home
+          Back
         </Link>
-        <span className="text-xs uppercase tracking-wider">Episode {episodeId}</span>
+        <span className="text-xs uppercase tracking-wider">
+          Episode {episode.number}
+        </span>
       </div>
 
       <div className="space-y-4">
         <div className="bg-black rounded-xl overflow-hidden border border-border">
-          <video ref={videoRef} controls playsInline className="w-full aspect-video" />
+          <video
+            ref={videoRef}
+            controls
+            playsInline
+            className="w-full aspect-video"
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
