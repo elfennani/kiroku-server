@@ -1,4 +1,6 @@
-use crate::domain::models::{EnqueueData, EpisodeQueueItem, ProcessingStep};
+use crate::domain::models::{
+    Chapter, EnqueueData, Episode, EpisodeQueueItem, MediaStatus, MediaSummary, ProcessingStep,
+};
 use crate::errors::AppError;
 use crate::infrastructure::database::connection::Database;
 use crate::infrastructure::packager::metadata::MediaMetadata;
@@ -81,6 +83,23 @@ impl EpisodeRepository {
         })
         .fetch_optional(&mut *conn)
         .await?)
+    }
+
+    pub async fn get_queue_items(&self) -> Result<Vec<EpisodeQueueItem>> {
+        let mut conn = self.db.conn.lock().await;
+
+        Ok(sqlx::query!("SELECT * FROM episode_queue",)
+            .map(|row| EpisodeQueueItem {
+                id: row.id.unwrap(),
+                media_id: row.media_id,
+                episode_number: row.episode_number,
+                file_path: PathBuf::from(row.file_path.unwrap()),
+                output_dir: PathBuf::from(row.output_path),
+                step: serde_plain::from_str(&row.step).unwrap(),
+                progress: row.progress,
+            })
+            .fetch_all(&mut *conn)
+            .await?)
     }
 
     pub async fn update_queue_status(
@@ -191,5 +210,49 @@ impl EpisodeRepository {
         tx.commit().await?;
 
         Ok(())
+    }
+
+    pub async fn get_episode_by_id(&self, id: impl AsRef<str>) -> Result<Option<Episode>> {
+        let mut conn = self.db.conn.lock().await;
+        let chapters = sqlx::query_as!(
+            Chapter,
+            "SELECT start_time as start, name FROM chapters WHERE episode_id=?",
+            id.as_ref()
+        )
+        .fetch_all(&mut *conn)
+        .await?;
+        let media = sqlx::query!(
+            "SELECT * FROM cached_media WHERE id=(SELECT media_id FROM episode WHERE id=?)",
+            id.as_ref()
+        )
+        .map(|row| MediaSummary {
+            id: row.id as i32,
+            banner: row.banner,
+            cover: row.cover,
+            title: row.title,
+            progress: row.progress.map(|p| p as u32),
+            total: row.total.map(|p| p as u32),
+            status: row
+                .status
+                .map(|status| serde_plain::from_str(&status).unwrap()),
+        })
+        .fetch_one(&mut *conn)
+        .await?;
+
+        Ok(
+            sqlx::query!("SELECT * FROM episode WHERE id=?", id.as_ref())
+                .map(|row| Episode {
+                    id: row.id,
+                    title: row.title,
+                    duration: row.duration.unwrap(),
+                    number: row.number,
+                    thumbnail: row.thumbnail,
+                    media: media.clone(),
+                    chapters: chapters.clone(),
+                    url: row.url.unwrap(),
+                })
+                .fetch_optional(&mut *conn)
+                .await?,
+        )
     }
 }

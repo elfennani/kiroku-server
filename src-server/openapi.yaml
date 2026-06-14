@@ -152,7 +152,7 @@ paths:
         required: true
         schema:
           type: string
-          format: UUID
+          format: nanoID
     get:
       tags: [ episodes ]
       summary: Get episode details
@@ -180,7 +180,7 @@ paths:
         required: true
         schema:
           type: string
-          format: UUID
+          format: nanoID
     get:
       tags: [ episodes ]
       responses:
@@ -340,7 +340,7 @@ components:
       properties:
         id:
           type: string
-          format: UUID
+          format: nanoID
         title:
           type: [ string, 'null' ]
         duration:
@@ -427,15 +427,14 @@ components:
         - media
         - chapters
         - url
-        - status
       properties:
         id:
           type: string
-          format: UUID
+          format: nanoID
         title:
           type: [ string, 'null' ]
         duration:
-          type: [ number, 'null' ]
+          type: number
           description: Duration of the episode in seconds.
         number:
           type: number
@@ -449,10 +448,8 @@ components:
           items:
             $ref: "#/components/schemas/EpisodeChapter"
         url:
-          type: [ string, 'null' ]
+          type: string
           description: HLS Playlist url (should include domain as well, Local IP address specifically)
-        status:
-          $ref: "#/components/schemas/ProcessingStatus"
     ProcessingStep:
       type: string
       enum: [ "IN_QUEUE", "PROCESSING_1080P", "PROCESSING_720P", "PROCESSING_AUDIO", "PROCESSING_SUBTITLES", "PACKAGING", "DONE" ]
@@ -462,7 +459,7 @@ components:
       properties:
         id:
           type: string
-          format: UUID
+          format: nanoID
         step:
           $ref: "#/components/schemas/ProcessingStep"
         progress:

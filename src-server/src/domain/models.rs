@@ -180,3 +180,27 @@ pub struct EpisodeQueueItem {
     pub step: ProcessingStep,
     pub progress: Option<f64>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Episode {
+    pub id: String,
+    pub title: Option<String>,
+    pub duration: i64,
+    pub number: f64,
+    pub thumbnail: Option<String>,
+    pub media: MediaSummary,
+    pub chapters: Vec<Chapter>,
+    pub url: String,
+}
+
+impl Episode {
+    fn update_url(&mut self, url: String) {
+        self.url = url;
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Chapter {
+    pub start: i64,
+    pub name: String,
+}

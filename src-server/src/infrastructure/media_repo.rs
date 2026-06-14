@@ -61,4 +61,25 @@ impl MediaRepository {
 
         Ok(result)
     }
+
+    pub async fn get_cached_media(&self) -> Result<Vec<MediaSummary>> {
+        let mut conn = self.db.conn.lock().await;
+
+        Ok(sqlx::query("SELECT * FROM cached_media")
+            .fetch_all(&mut *conn)
+            .await?
+            .iter()
+            .map(|row| MediaSummary {
+                id: row.get("id"),
+                banner: row.get("banner"),
+                cover: row.get("cover"),
+                title: row.get("title"),
+                progress: row.get("progress"),
+                total: row.get("total"),
+                status: row
+                    .get::<Option<String>, _>("status")
+                    .map(|status| serde_plain::from_str(&status).unwrap()),
+            })
+            .collect())
+    }
 }
