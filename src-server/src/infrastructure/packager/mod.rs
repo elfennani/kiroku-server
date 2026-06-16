@@ -5,17 +5,14 @@ use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
 use crate::prelude::*;
 use log::{debug, error, info};
-use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::ops::Add;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::{Arc, OnceLock};
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::{Child, Command};
-use tokio_util::sync::CancellationToken;
+use tokio::process::Command;
 
 /// This module takes an input mkv video, then separates all streams using `ffmpeg`, which
 /// then are fed into Google's Shaka packager for the purpose of generating HLS playlist (Similar
@@ -34,7 +31,6 @@ pub struct Packager {
     output_dir: PathBuf,
     streams: HashSet<String>,
     metadata: OnceLock<MediaMetadata>,
-    cancellation_token: CancellationToken,
 }
 
 impl Packager {
@@ -65,7 +61,6 @@ impl Packager {
             output_dir: output_dir.to_owned(),
             streams: HashSet::new(),
             metadata: OnceLock::new(),
-            cancellation_token: CancellationToken::new(),
         })
     }
 
@@ -129,6 +124,7 @@ impl Packager {
                 "2500k",
                 output_file.to_str().unwrap(),
             ])
+            .kill_on_drop(true)
             .stdout(Stdio::piped())
             .spawn();
 
@@ -164,27 +160,16 @@ impl Packager {
         }
 
         // We need to wait for the command to finish or else the function returns prematurely.
-
-        tokio::select! {
-            _ = self.cancellation_token.cancelled() => {
-                info!("Received cancellation signal");
-                handle.kill().await.map_err(|err| AppError::InternalServer(err.to_string()))?;
-
-                return Err(AppError::TranscodeError(String::from("Job cancelled")));
-            }
-            status = handle.wait() => {
-                match status {
-                    Ok(status) => {
-                        if !status.success() {
-                            return Err(AppError::TranscodeError(
-                                "ffmpeg exited with an error".to_string(),
-                            ));
-                        }
-                    }
-                    Err(err) => {
-                        return Err(AppError::TranscodeError(err.to_string()));
-                    }
+        match handle.wait().await {
+            Ok(status) => {
+                if !status.success() {
+                    return Err(AppError::TranscodeError(
+                        "ffmpeg exited with an error".to_string(),
+                    ));
                 }
+            }
+            Err(err) => {
+                return Err(AppError::TranscodeError(err.to_string()));
             }
         }
 
@@ -211,13 +196,13 @@ impl Packager {
                 format!("0:a:{}", audio.index).as_str(), // Audio stream selection.
                 output_file.to_str().unwrap(),
             ])
-            .spawn();
+            .output()
+            .await;
 
         if let Err(err) = handle {
             eprintln!("ffmpeg error: {}", err);
             return Err(AppError::TranscodeError(err.to_string()));
         }
-        let mut handle = handle.unwrap();
 
         let suffix = audio.language.clone().unwrap_or(audio.index.to_string());
         let name = audio
@@ -229,27 +214,6 @@ impl Packager {
                 "in=audio_{suffix}.mp4,stream=audio,segment_template=audio_{suffix}/$Number$.aac,playlist_name=audio_{suffix}/main.m3u8,hls_group_id=audio,hls_name={name}", suffix = suffix, name = name
             )
         );
-
-        tokio::select! {
-            _ = self.cancellation_token.cancelled() => {
-                info!("Received cancellation signal");
-                handle.kill().await.map_err(|err| AppError::InternalServer(err.to_string()))?;
-            }
-            status = handle.wait() => {
-                match status {
-                    Ok(status) => {
-                        if !status.success() {
-                            return Err(AppError::TranscodeError(
-                                "ffmpeg exited with an error".to_string(),
-                            ));
-                        }
-                    }
-                    Err(err) => {
-                        return Err(AppError::TranscodeError(err.to_string()));
-                    }
-                }
-            }
-        }
 
         Ok(output_file)
     }
@@ -478,12 +442,5 @@ impl Packager {
         }
 
         Ok(self.output_dir.join("h264_master.m3u8"))
-    }
-}
-
-impl Drop for Packager {
-    fn drop(&mut self) {
-        info!("Dropping Packager");
-        self.cancellation_token.cancel();
     }
 }
