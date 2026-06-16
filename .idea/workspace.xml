@@ -16,22 +16,10 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Added a route for media details. Updated the user interface to support responsive UI.">
-      <change afterPath="$PROJECT_DIR$/src/api/api-client.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="91b25be2-b443-427b-990c-ae59c9e014f4" name="Changes" comment="Updated the front-end to reflect on the API changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src-server/openapi.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/openapi.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/client.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/query-client.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/ongoing.query.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/processed.query.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/profile.query.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/profile.query.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/OngoingMedia.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/OngoingMedia.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/routes/EpisodePlayer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/EpisodePlayer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/routes/Media.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/Media.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/vite.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-server/src/infrastructure/packager/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-server/src/infrastructure/packager/mod.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +106,7 @@
     "org.rust.first.attach.projects": "true",
     "prettierjs.PrettierConfiguration.Package": "/Users/elfennani/RustroverProjects/kiroku-server/node_modules/prettier",
     "settings.editor.selected.configurable": "preferences.sourceCode.HTML",
-    "ts.external.directory.path": "/Users/elfennani/RustroverProjects/kiroku-server/node_modules/typescript/lib",
+    "ts.external.directory.path": "/Applications/WebStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -193,7 +181,7 @@
       <workItem from="1779467822266" duration="14000" />
       <workItem from="1779718408639" duration="19000" />
       <workItem from="1780507547597" duration="15438000" />
-      <workItem from="1781474417803" duration="1966000" />
+      <workItem from="1781474417803" duration="7967000" />
     </task>
     <task id="LOCAL-00001" summary="First commit">
       <option name="closed" value="true" />
@@ -315,7 +303,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779443451732</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Updated the front-end to reflect on the API changes">
+      <option name="closed" value="true" />
+      <created>1781476424452</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1781476424452</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -336,6 +332,7 @@
     <MESSAGE value="Added an endpoint to retrieve processed media info and updated the media processor repository.&#10;&#10;- Added a `GET /media/{media_id}/processed` route to fetch metadata for completed processing tasks associated with a specific media ID.&#10;- Implemented `get_processed_media_by_media_id` in `MediaProcessorRepository` to query processed episodes, durations, and UUIDs from the database.&#10;- Introduced the `ProcessedMedia` model for transferring episode-level processing results.&#10;- Updated the `uuid` dependency features to include `serde` support for serialization.&#10;- Registered the `MediaProcessorRepository` in the `ServerState` to allow access within API handlers." />
     <MESSAGE value="Implemented media details view and integrated Prettier for code formatting.&#10;&#10;- Updated `MediaRoute` to fetch and display processed episode metadata, including duration and episode numbering.&#10;- Implemented loading and error UI states using Lucide icons and alert components.&#10;- Added `prettier` as a dev dependency and introduced a `.prettierrc` configuration file.&#10;- Cleaned up `tsconfig` files by removing redundant `baseUrl` properties." />
     <MESSAGE value="Added a route for media details. Updated the user interface to support responsive UI." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added a route for media details. Updated the user interface to support responsive UI." />
+    <MESSAGE value="Updated the front-end to reflect on the API changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated the front-end to reflect on the API changes" />
   </component>
 </project>

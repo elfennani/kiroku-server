@@ -7,7 +7,7 @@ use crate::domain::models::Episode;
 use crate::errors::AppError;
 use axum::extract::{ConnectInfo, Path, State};
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use log::debug;
 use reqwest::StatusCode;
@@ -18,6 +18,7 @@ pub fn create_episode_router(state: Arc<ServerState>) -> Router<Arc<ServerState>
     Router::new()
         .route("/queue", post(queue_episode))
         .route("/queue", get(get_queue))
+        .route("/queue/{id}", delete(cancel_queue_item))
         .route("/{id}", get(get_episode_details))
         .with_state(state)
 }
@@ -77,4 +78,12 @@ async fn get_episode_details(
     };
 
     Ok(Json(DataResponse::new(episode.use_server_urls())))
+}
+
+async fn cancel_queue_item(
+    Path(id): Path<String>,
+    State(state): State<Arc<ServerState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<ErrorResponse>)> {
+    state.packager_service.cancel(id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

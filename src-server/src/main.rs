@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
         panic!("{} is not a directory", packager_dir.display());
     }
 
-    let packager_service = Arc::new(PackagerService::new(db.clone(), packager_dir));
+    let packager_service = Arc::new(PackagerService::new(db.clone(), packager_dir).await);
 
     {
         let packager_service = packager_service.clone();

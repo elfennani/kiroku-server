@@ -119,6 +119,7 @@ pub enum ProcessingStep {
     ProcessingSubtitles,
     Packaging,
     Done,
+    Cancelled
 }
 
 #[derive(Serialize, Deserialize, Debug)]

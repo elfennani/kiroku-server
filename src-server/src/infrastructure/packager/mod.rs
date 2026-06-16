@@ -5,14 +5,17 @@ use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
 use crate::prelude::*;
 use log::{debug, error, info};
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::ops::Add;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::rc::Rc;
 use std::str::FromStr;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::Command;
+use tokio::process::{Child, Command};
+use tokio_util::sync::CancellationToken;
 
 /// This module takes an input mkv video, then separates all streams using `ffmpeg`, which
 /// then are fed into Google's Shaka packager for the purpose of generating HLS playlist (Similar
@@ -31,6 +34,7 @@ pub struct Packager {
     output_dir: PathBuf,
     streams: HashSet<String>,
     metadata: OnceLock<MediaMetadata>,
+    cancellation_token: CancellationToken,
 }
 
 impl Packager {
@@ -61,6 +65,7 @@ impl Packager {
             output_dir: output_dir.to_owned(),
             streams: HashSet::new(),
             metadata: OnceLock::new(),
+            cancellation_token: CancellationToken::new(),
         })
     }
 
@@ -159,16 +164,27 @@ impl Packager {
         }
 
         // We need to wait for the command to finish or else the function returns prematurely.
-        match handle.wait_with_output().await {
-            Ok(output) => {
-                if !output.status.success() {
-                    return Err(AppError::TranscodeError(
-                        "ffmpeg exited with an error".to_string(),
-                    ));
-                }
+
+        tokio::select! {
+            _ = self.cancellation_token.cancelled() => {
+                info!("Received cancellation signal");
+                handle.kill().await.map_err(|err| AppError::InternalServer(err.to_string()))?;
+
+                return Err(AppError::TranscodeError(String::from("Job cancelled")));
             }
-            Err(err) => {
-                return Err(AppError::TranscodeError(err.to_string()));
+            status = handle.wait() => {
+                match status {
+                    Ok(status) => {
+                        if !status.success() {
+                            return Err(AppError::TranscodeError(
+                                "ffmpeg exited with an error".to_string(),
+                            ));
+                        }
+                    }
+                    Err(err) => {
+                        return Err(AppError::TranscodeError(err.to_string()));
+                    }
+                }
             }
         }
 
@@ -185,7 +201,8 @@ impl Packager {
         // Note: Shaka packager doesn't accept `aac` or `mp3`, but for some reason
         //       it take `mp4` as a container for audio.
         // ffmpeg -i input.mkv -map 0:a:0 audio_eng.mp4
-        let output = Command::new("ffmpeg")
+        let handle = Command::new("ffmpeg")
+            .kill_on_drop(true)
             .args([
                 "-y",
                 "-i",
@@ -194,13 +211,13 @@ impl Packager {
                 format!("0:a:{}", audio.index).as_str(), // Audio stream selection.
                 output_file.to_str().unwrap(),
             ])
-            .output()
-            .await;
+            .spawn();
 
-        if let Err(err) = output {
+        if let Err(err) = handle {
             eprintln!("ffmpeg error: {}", err);
             return Err(AppError::TranscodeError(err.to_string()));
         }
+        let mut handle = handle.unwrap();
 
         let suffix = audio.language.clone().unwrap_or(audio.index.to_string());
         let name = audio
@@ -212,6 +229,27 @@ impl Packager {
                 "in=audio_{suffix}.mp4,stream=audio,segment_template=audio_{suffix}/$Number$.aac,playlist_name=audio_{suffix}/main.m3u8,hls_group_id=audio,hls_name={name}", suffix = suffix, name = name
             )
         );
+
+        tokio::select! {
+            _ = self.cancellation_token.cancelled() => {
+                info!("Received cancellation signal");
+                handle.kill().await.map_err(|err| AppError::InternalServer(err.to_string()))?;
+            }
+            status = handle.wait() => {
+                match status {
+                    Ok(status) => {
+                        if !status.success() {
+                            return Err(AppError::TranscodeError(
+                                "ffmpeg exited with an error".to_string(),
+                            ));
+                        }
+                    }
+                    Err(err) => {
+                        return Err(AppError::TranscodeError(err.to_string()));
+                    }
+                }
+            }
+        }
 
         Ok(output_file)
     }
@@ -339,6 +377,7 @@ impl Packager {
 
         // ffmpeg -i input.mkv -map 0:s:0 subtitles.vtt
         let output = Command::new("ffmpeg")
+            .kill_on_drop(true)
             .args([
                 "-y",
                 "-i",
@@ -375,6 +414,7 @@ impl Packager {
 
         // ffmpeg -ss 00:XX:00 -i input.mp4 -vframes 1 -q:v 2 thumbnail.jpg
         let output = Command::new("ffmpeg")
+            .kill_on_drop(true)
             .args([
                 "-ss",
                 &format!("00:{:02}:00", rand::random_range(3..20)),
@@ -410,8 +450,9 @@ impl Packager {
         //   --hls_master_playlist_output h264_master.m3u8
 
         let mut command = Command::new("shaka");
+        command.kill_on_drop(true);
 
-        for stream in self.streams {
+        for stream in self.streams.clone() {
             command.arg(stream);
         }
 
@@ -437,5 +478,12 @@ impl Packager {
         }
 
         Ok(self.output_dir.join("h264_master.m3u8"))
+    }
+}
+
+impl Drop for Packager {
+    fn drop(&mut self) {
+        info!("Dropping Packager");
+        self.cancellation_token.cancel();
     }
 }

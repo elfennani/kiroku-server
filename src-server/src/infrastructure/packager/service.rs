@@ -8,26 +8,39 @@ use log::{debug, error, info};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
+use tokio::select;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio_util::sync::CancellationToken;
+
+struct ProcessingJob {
+    id: String,
+    cancellation_token: CancellationToken,
+}
 
 pub struct PackagerService {
     episode_repository: Arc<EpisodeRepository>,
     app_data_dir: PathBuf,
     tx: UnboundedSender<String>,
     rx: Arc<Mutex<UnboundedReceiver<String>>>,
+    current_job: Arc<Mutex<Option<ProcessingJob>>>,
 }
 
 impl PackagerService {
-    pub fn new(db: Arc<Database>, app_data_dir: impl AsRef<Path>) -> PackagerService {
+    pub async fn new(db: Arc<Database>, app_data_dir: impl AsRef<Path>) -> PackagerService {
         let output_dir = app_data_dir.as_ref();
+        let episode_repository = Arc::new(EpisodeRepository::new(db.clone(), output_dir));
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+
+        // TODO: Retry incomplete queues
+        let queue = episode_repository.get_queue_items().await;
 
         Self {
             app_data_dir: output_dir.to_owned(),
             tx,
             rx: Arc::new(Mutex::new(rx)),
-            episode_repository: Arc::new(EpisodeRepository::new(db.clone(), output_dir)),
+            episode_repository,
+            current_job: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -46,6 +59,22 @@ impl PackagerService {
         Ok(())
     }
 
+    pub async fn cancel(&self, id: String) -> Result<()> {
+        self.episode_repository
+            .update_queue_status(&id, ProcessingStep::Cancelled, None)
+            .await?;
+
+        let mut current_job = self.current_job.lock().await;
+        if let Some(job) = current_job.as_ref() {
+            if job.id == id {
+                job.cancellation_token.cancel();
+                *current_job = None;
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn app_data_dir(&self) -> &Path {
         &self.app_data_dir
     }
@@ -54,10 +83,22 @@ impl PackagerService {
         let mut rx = self.rx.lock().await;
 
         while let Some(id) = rx.recv().await {
-            let result: Result<()> = {
+            let cancellation_token = CancellationToken::new();
+            let job = ProcessingJob {
+                id: id.clone(),
+                cancellation_token: cancellation_token.clone(),
+            };
+            {
+                let mut current_job = self.current_job.lock().await;
+                *current_job = Some(job);
+            }
+
+            let episode_repo = self.episode_repository.clone();
+            let id_clone = id.clone();
+            let processing_job = tokio::spawn(async move {
                 debug!("PackagerService received: {:?}", id);
 
-                let process = match self.episode_repository.get_queue_item(&id).await? {
+                let process = match episode_repo.get_queue_item(&id).await? {
                     None => {
                         return Err(AppError::NotFound(format!(
                             "Episode queue item #{} not found",
@@ -67,11 +108,15 @@ impl PackagerService {
                     Some(ep) => ep,
                 };
 
+                if process.step == ProcessingStep::Cancelled {
+                    return Ok(());
+                }
+
                 let mut packager = Packager::new(process.file_path, process.output_dir)?;
                 let metadata = packager.get_metadata().await?;
 
                 if process.step <= ProcessingStep::Processing720p {
-                    self.episode_repository
+                    episode_repo
                         .update_queue_status(&id, ProcessingStep::Processing720p, None)
                         .await?;
 
@@ -79,7 +124,7 @@ impl PackagerService {
                     let mut _last_update = SystemTime::now();
                     let video = packager
                         .transcode_video(720, |progress| {
-                            let episode_repo = self.episode_repository.clone();
+                            let episode_repo = episode_repo.clone();
                             let queue_id = id.clone();
 
                             tokio::spawn(async move {
@@ -104,7 +149,7 @@ impl PackagerService {
                         })
                         .await?;
 
-                    self.episode_repository
+                    episode_repo
                         .insert_temp_file(&id, video.to_str().unwrap())
                         .await?;
                 }
@@ -112,12 +157,12 @@ impl PackagerService {
                 if process.step <= ProcessingStep::Processing1080p {
                     debug!("Transcoding Video in 1080p");
                     let mut _last_update = SystemTime::now();
-                    self.episode_repository
+                    episode_repo
                         .update_queue_status(&id, ProcessingStep::Processing720p, None)
                         .await?;
                     let video = packager
                         .transcode_video(1080, |progress| {
-                            let episode_repo = self.episode_repository.clone();
+                            let episode_repo = episode_repo.clone();
                             let queue_id = id.clone();
 
                             tokio::spawn(async move {
@@ -141,13 +186,13 @@ impl PackagerService {
                             });
                         })
                         .await?;
-                    self.episode_repository
+                    episode_repo
                         .insert_temp_file(&id, video.to_str().unwrap())
                         .await?;
                 }
 
                 if process.step <= ProcessingStep::ProcessingAudio {
-                    self.episode_repository
+                    episode_repo
                         .update_queue_status(&id, ProcessingStep::ProcessingAudio, None)
                         .await?;
                     for audio in metadata.audio {
@@ -156,14 +201,14 @@ impl PackagerService {
                             audio.index, audio.title
                         );
                         let audio = packager.transcode_audio(audio).await?;
-                        self.episode_repository
+                        episode_repo
                             .insert_temp_file(&id, audio.to_str().unwrap())
                             .await?;
                     }
                 }
 
                 if process.step <= ProcessingStep::ProcessingSubtitles {
-                    self.episode_repository
+                    episode_repo
                         .update_queue_status(&id, ProcessingStep::ProcessingSubtitles, None)
                         .await?;
                     for subtitle in metadata.subtitles {
@@ -172,13 +217,13 @@ impl PackagerService {
                             subtitle.index, subtitle.title
                         );
                         let subtitle = packager.extract_subtitles(subtitle).await?;
-                        self.episode_repository
+                        episode_repo
                             .insert_temp_file(&id, subtitle.to_str().unwrap())
                             .await?;
                     }
                 }
 
-                self.episode_repository
+                episode_repo
                     .update_queue_status(&id, ProcessingStep::Packaging, None)
                     .await?;
                 debug!("Generating thumbnail");
@@ -189,18 +234,15 @@ impl PackagerService {
                 let playlist = packager.package().await?;
 
                 debug!("Saving...");
-                self.episode_repository
+                episode_repo
                     .save_episode(&id, metadata, thumbnail, playlist)
                     .await?;
-                self.episode_repository
+                episode_repo
                     .update_queue_status(&id, ProcessingStep::Done, None)
                     .await?;
 
                 debug!("Deleting temporary files");
-                let temp_files = self
-                    .episode_repository
-                    .get_temp_files_by_queue_id(&id)
-                    .await?;
+                let temp_files = episode_repo.get_temp_files_by_queue_id(&id).await?;
 
                 debug!("Deleting {} temporary files", temp_files.len());
                 for file in temp_files {
@@ -218,14 +260,27 @@ impl PackagerService {
                     debug!("Deleted file: {:?}", file);
                 }
 
-                self.episode_repository.clear_temp_files(&id).await?;
+                episode_repo.clear_temp_files(&id).await?;
 
                 info!("Packaging Done");
 
                 Ok(())
+            });
+
+            let handle = processing_job.abort_handle();
+            let data: Result<()> = select! {
+                _ = cancellation_token.cancelled() => {
+                    info!("Job \"{}\" cancelled", id_clone);
+                    handle.abort();
+                    Ok(())
+                }
+
+                result = processing_job => {
+                    result.map_err(|err| AppError::TranscodeError("Failed to run processing thread".to_string()))?
+                }
             };
 
-            if let Err(e) = result {
+            if let Err(e) = data {
                 error!("Error while processing: {:?}", e);
             }
         }

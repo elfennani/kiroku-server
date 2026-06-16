@@ -220,7 +220,6 @@ paths:
                         type: integer
                         format: double
                         description: Episode number, it has to be double due to the possibility of extra episodes.
-
       responses:
         "204":
           description: Episode(s) successfully enqueued.
@@ -230,6 +229,26 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalServerError"
+
+  /episodes/queue/{id}:
+    delete:
+      summary: Cancel queue items
+      tags: [ episodes ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          summary: ID of the queue item
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Queue item successfully cancelled.
+        "400": # empty list.
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 
 components:
   schemas:
@@ -429,7 +448,15 @@ components:
           description: HLS Playlist url (should include domain as well, Local IP address specifically)
     ProcessingStep:
       type: string
-      enum: [ "IN_QUEUE", "PROCESSING_1080P", "PROCESSING_720P", "PROCESSING_AUDIO", "PROCESSING_SUBTITLES", "PACKAGING", "DONE" ]
+      enum:
+        - "IN_QUEUE"
+        - "PROCESSING_1080P"
+        - "PROCESSING_720P"
+        - "PROCESSING_AUDIO"
+        - "PROCESSING_SUBTITLES"
+        - "PACKAGING"
+        - "DONE"
+        - "CANCELLED"
     QueueItem:
       type: object
       required: [ id, step, progress, number, media ]

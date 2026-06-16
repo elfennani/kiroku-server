@@ -4,15 +4,12 @@ version = "0.1.0"
 edition = "2024"
 default-run = "kiroku-server"
 
-#[[bin]]
-#name = "kiroku-packager"
-#path = "src/packager.rs"
-
 [[bin]]
 name = "kiroku-server"
 path = "src/main.rs"
 
 [dependencies]
+tokio-util = "0.7.18"
 reqwest = { version = "0.13.3", features = ["json"] }
 serde_json = "1.0.149"
 axum = "0.8.9"
