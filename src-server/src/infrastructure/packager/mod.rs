@@ -4,10 +4,12 @@ pub mod service;
 use crate::errors::AppError;
 use crate::infrastructure::packager::metadata::{AudioStream, MediaMetadata, SubtitleStream};
 use crate::prelude::*;
-use log::info;
-use std::collections::HashSet;
+use log::{debug, error, info};
+use std::collections::{HashMap, HashSet};
+use std::ops::Add;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::str::FromStr;
 use std::sync::OnceLock;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
@@ -213,6 +215,102 @@ impl Packager {
 
         Ok(output_file)
     }
+
+    /// ffmpeg introduced some problems in the way WebVTT files are
+    /// generated that cause Shaka packager to fail. For example:
+    /// ```
+    /// 11:18.650 --> 11:21.650
+    /// Red Giant over Eastern Europe... (Part One)
+    ///
+    /// 18:30.290 --> 18:34.170
+    /// <b></b>Public Safety Division
+    ///
+    ///
+    ///
+    ///
+    /// Foreign Affairs Department 4
+    ///
+    /// 18:30.290 --> 18:34.170
+    /// <b></b>Public Safety Division
+    ///
+    ///
+    ///
+    ///
+    /// Foreign Affairs Department 4
+    ///
+    /// 22:09.300 --> 22:19.730
+    /// Lit by the light of the moon in the blue, blue sky
+    /// ```
+    ///
+    /// Blank lines in WebVTT imply the start of new text block, and each
+    /// text block has to have a time range first before the actual text.
+    ///
+    /// The above example should be normalized and have duplicates time ranges
+    /// removed (prioritize last), which results in:
+    /// ```
+    /// 11:18.650 --> 11:21.650
+    /// Red Giant over Eastern Europe... (Part One)
+    ///
+    /// 18:30.290 --> 18:34.170
+    /// <b></b>Public Safety Division
+    /// Foreign Affairs Department 4
+    ///
+    /// 22:09.300 --> 22:19.730
+    /// Lit by the light of the moon in the blue, blue sky
+    /// ```
+    async fn normalize_subtitles(&self, path: impl AsRef<Path>) -> Result<()> {
+        let file = PathBuf::from(path.as_ref());
+        let content = std::fs::read_to_string(&file).map_err(|err| {
+            AppError::PackagerError(format!("Failed to read video subtitles file: {}", err))
+        })?;
+        let content = content.split('\n').into_iter();
+        let mut items: HashMap<String, String> = HashMap::new();
+        let mut start_found = false;
+        let mut last_item: Option<String> = None;
+
+        for line in content {
+            if line == "WEBVTT" && !start_found {
+                start_found = true;
+                continue;
+            }
+
+            if line.contains("-->") {
+                if items.contains_key(line) {
+                    items.remove(line);
+                }
+
+                items.insert(line.to_string(), String::from(""));
+                last_item = Some(line.to_string());
+            } else {
+                if line.trim().is_empty() || last_item.is_none() {
+                    continue;
+                }
+                let last_item = last_item.clone().unwrap();
+                let prev = items.get(&last_item).unwrap();
+
+                if !prev.trim().is_empty() {
+                    info!("PREV: {}", prev);
+                    items.insert(last_item.clone(), prev.clone().add(&format!("\n{}", line)));
+                } else {
+                    items.insert(last_item.clone(), line.to_string());
+                }
+            }
+        }
+
+        let mut content = String::from_str("WEBVTT\n\n").unwrap();
+
+        for (key, data) in items {
+            content.push_str(format!("{}\n{}\n\n", key, data).as_str());
+        }
+
+        std::fs::write(&file, content.as_bytes()).map_err(|err| {
+            AppError::PackagerError(format!("Failed to write video subtitles file: {}", err))
+        })?;
+        info!("WEBVTT normalized output written to {:?}", file);
+
+        Ok(())
+    }
+
     pub async fn extract_subtitles(&mut self, subtitle_stream: SubtitleStream) -> Result<PathBuf> {
         let mut output_file = self.output_dir.join(format!(
             "subtitles_{}.vtt",
@@ -266,6 +364,8 @@ impl Packager {
             .clone()
             .unwrap_or(format!("Track {}", subtitle_stream.index + 1));
         self.streams.insert(format!("in=subtitles_{suffix}.vtt,stream=text,segment_template=text_{suffix}/$Number$.vtt,playlist_name=text_{suffix}/main.m3u8,hls_group_id=text,hls_name={name}", suffix = suffix, name = name));
+
+        self.normalize_subtitles(&output_file).await?;
 
         Ok(output_file)
     }
@@ -324,6 +424,16 @@ impl Packager {
         if let Err(err) = output {
             eprintln!("Failed to transcode: {}", err);
             return Err(AppError::PackagerError(err.to_string()));
+        } else if let Ok(output) = output {
+            if !output.status.success() {
+                let err = String::from_utf8_lossy(&output.stderr);
+                error!("Command failed with: {}", output.status);
+                error!("stderr:\n{}", err);
+                return Err(AppError::PackagerError(err.to_string()));
+            } else {
+                debug!("Command with status: {}", output.status);
+                debug!("stdout:\n{}", String::from_utf8_lossy(&output.stdout));
+            }
         }
 
         Ok(self.output_dir.join("h264_master.m3u8"))
